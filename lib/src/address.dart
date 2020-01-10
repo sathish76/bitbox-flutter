@@ -145,21 +145,13 @@ class Address {
   static String toCashAddress(String legacyAddress,
       [bool includePrefix = true]) {
     final decoded = Address._decodeLegacyAddress(legacyAddress);
-    String prefix = "";
-    if (includePrefix) {
-      switch (decoded["version"]) {
-        case Network.bchPublic:
-          prefix = "bitcoincash";
-          break;
-        case Network.bchTestnetPublic:
-          prefix = "bchtest";
-          break;
-        default:
-          throw FormatException("Unsupported address format: $legacyAddress");
-      }
+
+    if (!includePrefix) {
+      decoded['prefix'] = "";
     }
 
-    final cashAddress = Address._encode(prefix, "P2PKH", decoded["hash"]);
+    final cashAddress =
+        Address._encode(decoded['prefix'], decoded['type'], decoded["hash"]);
     return cashAddress;
   }
 
@@ -167,8 +159,26 @@ class Address {
   static String toLegacyAddress(String cashAddress) {
     final decoded = _decodeCashAddress(cashAddress);
     final testnet = decoded['prefix'] == "bchtest";
-
-    final version = !testnet ? Network.bchPublic : Network.bchTestnetPublic;
+    var version;
+    if (testnet) {
+      switch (decoded['type']) {
+        case "P2PKH":
+          version = Network.bchTestnetPublic;
+          break;
+        case "P2SH":
+          version = Network.bchTestnetscriptHash;
+          break;
+      }
+    } else {
+      switch (decoded['type']) {
+        case "P2PKH":
+          version = Network.bchPublic;
+          break;
+        case "P2SH":
+          version = Network.bchPublicscriptHash;
+          break;
+      }
+    }
     return toBase58Check(decoded["hash"], version);
   }
 
@@ -201,11 +211,11 @@ class Address {
 
   /// Encodes a hash from a given type into a Bitcoin Cash address with the given prefix.
   /// [prefix] - Network prefix. E.g.: 'bitcoincash'.
-  /// [type] is currently unused - the library works only with _P2PKH_
+  /// [type] Type of address to generate. Either 'P2PKH' or 'P2SH'.
   /// [hash] is the address hash, which can be decode either using [_decodeCashAddress()] or [_decodeLegacyAddress()]
   static _encode(String prefix, String type, Uint8List hash) {
     final prefixData = _prefixToUint5List(prefix) + Uint8List(1);
-    final versionByte = _getHashSizeBits(hash);
+    final versionByte = _getTypeBits(type) + _getHashSizeBits(hash);
     final payloadData =
         _convertBits(Uint8List.fromList([versionByte] + hash), 8, 5);
     final checksumData = prefixData + payloadData + Uint8List(8);
@@ -287,6 +297,29 @@ class Address {
     return -1;
   }
 
+  static String _getType(versionByte) {
+    switch (versionByte & 120) {
+      case 0:
+        return 'P2PKH';
+      case 8:
+        return 'P2SH';
+      default:
+        throw FormatException(
+            'Invalid address type in version byte: ' + versionByte + '.');
+    }
+  }
+
+  static int _getTypeBits(type) {
+    switch (type) {
+      case 'P2PKH':
+        return 0;
+      case 'P2SH':
+        return 8;
+      default:
+        throw new FormatException('Invalid type: ' + type + '.');
+    }
+  }
+
   /// Decodes the given address into:
   /// * (for cashAddr): constituting prefix (e.g. _bitcoincash_)
   /// * (for legacy): version
@@ -308,11 +341,48 @@ class Address {
   static Map<String, dynamic> _decodeLegacyAddress(String address) {
     Uint8List buffer = bs58check.decode(address);
 
-    return <String, dynamic>{
-      "version": buffer.first,
-      "hash": buffer.sublist(1),
-      "format": formatLegacy,
+    var decoded = {
+      'prefix': "",
+      'type': "",
+      'hash': buffer.sublist(1),
+      'format': ""
     };
+
+    switch (buffer.first) {
+      case Network.bchPublic:
+        decoded = {
+          'prefix': "bitcoincash",
+          'type': "P2PKH",
+          'hash': buffer.sublist(1),
+          'format': "legacy"
+        };
+        break;
+      case Network.bchPublicscriptHash:
+        decoded = {
+          'prefix': "bitcoincash",
+          'type': "P2SH",
+          'hash': buffer.sublist(1),
+          'format': "legacy"
+        };
+        break;
+      case Network.bchTestnetPublic:
+        decoded = {
+          'prefix': "bchtest",
+          'type': "P2PKH",
+          'hash': buffer.sublist(1),
+          'format': "legacy"
+        };
+        break;
+      case Network.bchTestnetscriptHash:
+        decoded = {
+          'prefix': "bchtest",
+          'type': "P2SH",
+          'hash': buffer.sublist(1),
+          'format': "legacy"
+        };
+        break;
+    }
+    return decoded;
   }
 
   /// Decodes the given address into its constituting prefix, type and hash
@@ -355,6 +425,7 @@ class Address {
 
       final payloadData =
           _fromUint5Array(payload.sublist(0, payload.length - 8));
+      var versionByte = payloadData[0];
       final hash = payloadData.sublist(1);
 
       if (_getHashSize(payloadData[0]) != hash.length * 8) {
@@ -362,10 +433,13 @@ class Address {
         continue;
       }
 
+      var type = _getType(versionByte);
+
       // If the loop got all the way here, it means validations went through and the address was decoded.
       // Return the decoded data
       return <String, dynamic>{
         "prefix": prefixes[i],
+        "type": type,
         "hash": hash,
         "format": formatCashAddr
       };
