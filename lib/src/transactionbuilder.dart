@@ -125,7 +125,7 @@ class TransactionBuilder {
   /// Adds transaction output, which can be provided as:
   /// * Address as [String] in either _legacy_ or _cashAddr_ format
   /// * scriptPubKey
-  /// * scriptPubHash
+  /// * scriptHash
   ///
   /// Returns output id
   ///
