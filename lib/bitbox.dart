@@ -6,6 +6,7 @@ export 'src/bitbox.dart';
 export 'src/bitcoincash.dart';
 export 'src/block.dart';
 export 'src/cashaccounts.dart';
+export 'src/crypto/crypto.dart';
 export 'src/ecpair.dart';
 export 'src/hdnode.dart';
 export 'src/mnemonic.dart';
