@@ -32,7 +32,7 @@ class P2PKH {
       data.hash = data.output.sublist(3, 23);
       _getDataFromHash();
     } else if (data.pubkey != null) {
-      data.hash = hash160(data.pubkey);
+      data.hash = Crypto.hash160(data.pubkey);
       _getDataFromHash();
       _getDataFromChunk();
     } else if (data.input != null) {
@@ -50,12 +50,16 @@ class P2PKH {
 
   void _getDataFromChunk([List<dynamic> _chunks]) {
     if (data.pubkey == null && _chunks != null) {
-      data.pubkey = (_chunks[1] is int) ? new Uint8List.fromList([_chunks[1]]) : _chunks[1];
-      data.hash = hash160(data.pubkey);
+      data.pubkey = (_chunks[1] is int)
+          ? new Uint8List.fromList([_chunks[1]])
+          : _chunks[1];
+      data.hash = Crypto.hash160(data.pubkey);
       _getDataFromHash();
     }
     if (data.signature == null && _chunks != null)
-      data.signature = (_chunks[0] is int) ? new Uint8List.fromList([_chunks[0]]) : _chunks[0];
+      data.signature = (_chunks[0] is int)
+          ? new Uint8List.fromList([_chunks[0]])
+          : _chunks[0];
     if (data.input == null && data.pubkey != null && data.signature != null) {
       data.input = bscript.compile([data.signature, data.pubkey]);
     }
@@ -97,7 +101,7 @@ class P2PKHData {
   Uint8List pubkey;
   Uint8List input;
   P2PKHData(
-    {this.address,
+      {this.address,
       this.hash,
       this.output,
       this.pubkey,
@@ -112,9 +116,9 @@ class P2PKHData {
 
 isValidOutput(Uint8List data) {
   return data.length == 25 &&
-    data[0] == Opcodes.OP_DUP &&
-    data[1] == Opcodes.OP_HASH160 &&
-    data[2] == 0x14 &&
-    data[23] == Opcodes.OP_EQUALVERIFY &&
-    data[24] == Opcodes.OP_CHECKSIG;
+      data[0] == Opcodes.OP_DUP &&
+      data[1] == Opcodes.OP_HASH160 &&
+      data[2] == 0x14 &&
+      data[23] == Opcodes.OP_EQUALVERIFY &&
+      data[24] == Opcodes.OP_CHECKSIG;
 }

@@ -360,7 +360,7 @@ class TransactionBuilder {
     final prevOutScript = bscript.compile([
       Opcodes.OP_DUP,
       Opcodes.OP_HASH160,
-      hash160(kpPubKey),
+      Crypto.hash160(kpPubKey),
       Opcodes.OP_EQUALVERIFY,
       Opcodes.OP_CHECKSIG
     ]);
@@ -391,7 +391,7 @@ class TransactionBuilder {
     // does our hash160(pubKey) match the output scripts?
     Uint8List pkh1 = scriptChunks[
         2]; //new P2PKH(data: new P2PKHData(output: script)).data.hash;
-    Uint8List pkh2 = hash160(ourPubKey);
+    Uint8List pkh2 = Crypto.hash160(ourPubKey);
 
     // this check should work, but for some reason doesn't - it returns false even if both lists are the same
     // TODO: debug and re-enable this validation

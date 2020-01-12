@@ -32,7 +32,7 @@ class P2SH {
       data.hash = data.output.sublist(2, 22);
       _getDataFromHash();
     } else if (data.scriptHash != null) {
-      data.hash = hash160(data.scriptHash);
+      data.hash = Crypto.hash160(data.scriptHash);
       _getDataFromHash();
       _getDataFromChunk();
     } else if (data.input != null) {
@@ -53,7 +53,7 @@ class P2SH {
       data.scriptHash = (_chunks[1] is int)
           ? new Uint8List.fromList([_chunks[1]])
           : _chunks[1];
-      data.hash = hash160(data.scriptHash);
+      data.hash = Crypto.hash160(data.scriptHash);
       _getDataFromHash();
     }
     if (data.signature == null && _chunks != null)
