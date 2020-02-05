@@ -107,7 +107,7 @@ class P2SHData {
 
   @override
   String toString() {
-    return 'P2PKHData{address: $address, hash: $hash, output: $output, signature: $signature, pubkey: $scriptHash, input: $input}';
+    return 'P2SHData{address: $address, hash: $hash, output: $output, signature: $signature, pubkey: $scriptHash, input: $input}';
   }
 }
 
