@@ -1,7 +1,8 @@
 class Bip21 {
   static Map<String, dynamic> decode(String uri) {
-    if (uri.indexOf('bitcoincash') != 0 || uri['bitcoincash'.length] != ":")
-      throw ("Invalid BIP21 URI");
+    if (uri.indexOf('bitcoincash') != 0 || uri['bitcoincash'.length] != ":") {
+      if (uri.indexOf('bchtest') != 0) throw ("Invalid BIP21 URI");
+    }
 
     int split = uri.indexOf("?");
     Map<String, String> uriOptions = Uri.parse(uri).queryParameters;
@@ -32,9 +33,12 @@ class Bip21 {
   }
 
   static String encode(String address, Map<String, dynamic> options) {
-    var isCashAddress = address.startsWith('bitcoincash:');
-    if (!isCashAddress) {
+    var isMainCashAddress = address.startsWith('bitcoincash:');
+    var isTestCashAddress = address.startsWith('bchtest:');
+    if (!isMainCashAddress) {
       address = 'bitcoincash:$address';
+    } else if (!isTestCashAddress) {
+      address = 'bchtest:$address';
     }
 
     String query = "";
