@@ -212,6 +212,9 @@ class HDNode {
   /// Returns HDNode's address in cashAddr format
   String toCashAddress() => Address.toCashAddress(toLegacyAddress());
 
+  /// Returns HDNode's address in slpAddr format
+  String toSLPAddress() => Address.toSLPAddress(toLegacyAddress());
+
   HDNode _deriveHardened(int index) {
     return derive(index + HIGHEST_BIT);
   }
