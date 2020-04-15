@@ -1,8 +1,8 @@
 class Bip21 {
   static Map<String, dynamic> decode(String uri) {
-    if (uri.indexOf('bitcoincash') != 0 || uri['bitcoincash'.length] != ":") {
-      if (uri.indexOf('bchtest') != 0) throw ("Invalid BIP21 URI");
-    }
+    // if (uri.indexOf('bitcoincash') != 0 || uri['bitcoincash'.length] != ":") {
+    //   if (uri.indexOf('bchtest') != 0) throw ("Invalid BIP21 URI");
+    // }
 
     int split = uri.indexOf("?");
     Map<String, String> uriOptions = Uri.parse(uri).queryParameters;
