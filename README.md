@@ -6,37 +6,32 @@ Works with mainnet and testnet.
 ## Getting Started
 
 ### 1) Depend on it
-If you just want to get this from Dart's public package directory:
 
 ```
 dependencies:
-  bitbox: ^0.0.1
+  bitbox:
+    git:
+      url: https://github.com/RomitRadical/bitbox-flutter
+      ref: master
 ```
 
-If you checked this out from Github, add a local dependency into the pubspec.yaml of your testing or development projet:
-
-```
-dependencies:
-  bitbox_plugin:
-    path: <path to the directory>/
-```
-	
 ### 2) Import it
 
 ```
-// There's a good chance your own project will use similar names as some of the 
-// classes in this library. A simple way to create some order is to import the 
+// There's a good chance your own project will use similar names as some of the
+// classes in this library. A simple way to create some order is to import the
 // library with Bitbox prefix:
-import 'package:bitbox/bitbox.dart' as Bitbox;
+import 'package:bitbox/bitbox.dart' as bitbox;
 ```
 
 ### 2) Use it
+
 ```
 // set this to true to use testnet
 final testnet = true;
 
-// After running the code for the first time, depositing an amount to the address 
-// displayed in the console, and waiting for confirmation, paste the generated 
+// After running the code for the first time, depositing an amount to the address
+// displayed in the console, and waiting for confirmation, paste the generated
 // mnemonic here, so the code continues below with address withdrawal
 String mnemonic = "";
 
@@ -93,7 +88,7 @@ if (addressDetails["balance"] > 0) {
   // placeholder for total input balance
   int totalBalance = 0;
 
-  // iterate through the list of address utxos and use them as inputs for the 
+  // iterate through the list of address utxos and use them as inputs for the
   // withdrawal transaction
   utxos.forEach((Bitbox.Utxo utxo) {
     // add the utxo as an input for the transaction
@@ -125,7 +120,7 @@ if (addressDetails["balance"] > 0) {
 
     // sign all inputs
     signatures.forEach((signature) {
-      builder.sign(signature["vin"], signature["key_pair"], 
+      builder.sign(signature["vin"], signature["key_pair"],
 	    signature["original_amount"]);
     });
 
@@ -147,8 +142,9 @@ For further documentation, refer to apidoc of this repository
 
 ## Testing
 
-There are some unit tests in test/bitbox_test.dart. They use data generated from the original [Bitbox for JS](https://developer.bitcoin.com/bitbox/) and compare them with the output of this library. 
+There are some unit tests in test/bitbox_test.dart. They use data generated from the original [Bitbox for JS](https://developer.bitcoin.com/bitbox/) and compare them with the output of this library.
 The following is tested for both testnet and mainnet:
+
 - Generating the master node from mnemonic and comparing both its XPub and XPriv
 - Generating an account node and comparing XPub and XPriv
 - Generating 10 test childs and comparing their private keys and addresses
@@ -163,9 +159,8 @@ To run the test:
 1. Copy create_test_data.js to a separate directory and download the original Bitbox JS into the directory
 2. Generate the testing data by runing create_test_data.js with your local nodeJS engine
 3. Update bitbox_test.dart with the path to the generated test_data.json file
-4. Run bitbox_test.dart 
-Optionally between step 1) and 2), send some balance to either testnet or mainnet addresses (or both), wait for confirmations and run create_test_data.js again to update the data and generate testing transactions
-
+4. Run bitbox_test.dart
+   Optionally between step 1) and 2), send some balance to either testnet or mainnet addresses (or both), wait for confirmations and run create_test_data.js again to update the data and generate testing transactions
 
 ## Acknowledgments
 
