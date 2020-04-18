@@ -19,3 +19,4 @@ export 'src/transaction.dart';
 export 'src/transactionbuilder.dart';
 export 'src/varuint.dart';
 export 'src/utils/opcodes.dart';
+export 'src/utils/script.dart';

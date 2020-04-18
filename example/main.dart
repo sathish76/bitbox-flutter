@@ -7,7 +7,8 @@ void main() async {
   // After running the code for the first time, depositing an amount to the address displayed in the console,
   // and waiting for confirmation, paste the generated mnemonic here,
   // so the code continues below with address withdrawal
-  String mnemonic = "leaf tackle snap liar core motion material live camp quote mercy void";
+  String mnemonic =
+      "leaf tackle snap liar core motion material live camp quote mercy void";
 
   if (mnemonic == "") {
     // generate 12-word (128bit) mnemonic
@@ -78,7 +79,8 @@ void main() async {
     });
 
     // set an address to send the remaining balance to
-    final outputAddress = "bitcoincash:qq4vzza5uhgr42ntkl28x67qzda4af5hpgap6z0ntx";
+    final outputAddress =
+        "bitcoincash:qq4vzza5uhgr42ntkl28x67qzda4af5hpgap6z0ntx";
 
     // if there is an unspent balance, create a spending transaction
     if (totalBalance > 0 && outputAddress != "") {
@@ -93,7 +95,8 @@ void main() async {
 
       // sign all inputs
       signatures.forEach((signature) {
-        builder.sign(signature["vin"], signature["key_pair"], signature["original_amount"]);
+        builder.sign(signature["vin"], signature["key_pair"],
+            signature["original_amount"]);
       });
 
       // build the transaction
