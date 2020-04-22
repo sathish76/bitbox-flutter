@@ -14,6 +14,7 @@ export 'src/mnemonic.dart';
 export 'src/networks.dart';
 export 'src/privatekey.dart';
 export 'src/publickey.dart';
+export 'src/slp.dart';
 export 'src/rawtransactions.dart';
 export 'src/transaction.dart';
 export 'src/transactionbuilder.dart';
