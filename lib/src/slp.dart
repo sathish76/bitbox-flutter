@@ -235,7 +235,7 @@ class SLP {
     int sendCost = _calculateSendCost(slpSendOpReturn.length,
         inputTokenUtxos.length, tokenReceiverAddresses.length + bchOnlyCount,
         bchChangeAddress: bchChangeReceiverAddress,
-        feeRate: extraFee != null ? extraFee : 0);
+        feeRate: extraFee != null ? extraFee : 1);
 
     // Compute BCH change amount
     BigInt bchChangeAfterFeeSatoshis =
