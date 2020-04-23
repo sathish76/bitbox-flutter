@@ -161,9 +161,9 @@ class SLP {
     });
 
     if (bchChangeReceiverAddress != null) {
-      if (!bchChangeReceiverAddress.startsWith('bitcoincash:')) {
+      if (!bchChangeReceiverAddress.startsWith('simpleledger:')) {
         throw new Exception(
-            "BCH change receiver address is not in Cashaddr format.");
+            "BCH/SLP token change receiver address is not in SlpAddr format.");
       }
     }
 
