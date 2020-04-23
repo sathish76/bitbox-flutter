@@ -161,9 +161,9 @@ class SLP {
     });
 
     if (bchChangeReceiverAddress != null) {
-      if (!bchChangeReceiverAddress.startsWith('simpleledger:')) {
+      if (!bchChangeReceiverAddress.startsWith('bitcoincash:')) {
         throw new Exception(
-            "Token/BCH change receiver address is not in SLP format.");
+            "BCH change receiver address is not in Cashaddr format.");
       }
     }
 
@@ -198,12 +198,7 @@ class SLP {
 
     // Make sure the number of output receivers
     // matches the outputs in the OP_RETURN message.
-    var chgAddr = bchChangeReceiverAddress == null ? 0 : 1;
-    if (!sendMsgData.containsKey('amounts')) {
-      throw Exception("OP_RETURN contains no SLP send outputs.");
-    }
-    if (tokenReceiverAddresses.length + chgAddr !=
-        sendMsgData['amounts'].length) {
+    if (tokenReceiverAddresses.length != sendMsgData['amounts'].length) {
       throw Exception(
           "Number of token receivers in config does not match the OP_RETURN outputs");
     }
@@ -230,11 +225,11 @@ class SLP {
     // Calculate the amount of outputs set aside for special BCH-only outputs for fee calculation
     var bchOnlyCount =
         requiredNonTokenOutputs != null ? requiredNonTokenOutputs.length : 0;
-    BigInt bcOnlyOutputSatoshis = BigInt.from(0);
+    BigInt bchOnlyOutputSatoshis = BigInt.from(0);
     requiredNonTokenOutputs != null
         ? requiredNonTokenOutputs
-            .forEach((o) => bcOnlyOutputSatoshis += BigInt.from(o['satoshis']))
-        : bcOnlyOutputSatoshis = bcOnlyOutputSatoshis;
+            .forEach((o) => bchOnlyOutputSatoshis += BigInt.from(o['satoshis']))
+        : bchOnlyOutputSatoshis = bchOnlyOutputSatoshis;
 
     // Calculate mining fee cost
     int sendCost = _calculateSendCost(slpSendOpReturn.length,
@@ -244,7 +239,7 @@ class SLP {
 
     // Compute BCH change amount
     BigInt bchChangeAfterFeeSatoshis =
-        inputSatoshis - BigInt.from(sendCost) - bcOnlyOutputSatoshis;
+        inputSatoshis - BigInt.from(sendCost) - bchOnlyOutputSatoshis;
 
     // Start adding outputs to transaction
     // Add SLP SEND OP_RETURN message
@@ -271,10 +266,6 @@ class SLP {
 
     // Add change, if any
     if (bchChangeAfterFeeSatoshis > new BigInt.from(546)) {
-      bchChangeReceiverAddress =
-          Address.toLegacyAddress(bchChangeReceiverAddress);
-      bchChangeReceiverAddress =
-          Address.toCashAddress(bchChangeReceiverAddress);
       transactionBuilder.addOutput(
           bchChangeReceiverAddress, bchChangeAfterFeeSatoshis.toInt());
     }
