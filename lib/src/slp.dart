@@ -64,7 +64,7 @@ class SLP {
       String tokenReceiverAddress,
       String changeReceiverAddress,
       List requiredNonTokenOutputs,
-      int extraFee = 0,
+      int extraFee,
       int type = 0x01}) async {
     BigInt amount;
     if (tokenId is! String) {
