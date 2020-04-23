@@ -96,7 +96,11 @@ class SLP {
       return throw Exception('Token inputs less than the token outputs');
     }
     // 3 Create the Send OP_RETURN message
-    var sendOpReturn = Send(HEX.decode(tokenId), [amount, tokenChangeAmount]);
+    var sendOpReturn = Send(
+        HEX.decode(tokenId),
+        tokenChangeAmount > BigInt.from(0)
+            ? [amount, tokenChangeAmount]
+            : [amount]);
     // 4 Create the raw Send transaction hex
     txHex = await _buildRawSendTx(
         slpSendOpReturn: sendOpReturn,
