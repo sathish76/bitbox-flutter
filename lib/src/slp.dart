@@ -266,8 +266,9 @@ class SLP {
 
     // Add change, if any
     if (bchChangeAfterFeeSatoshis > new BigInt.from(546)) {
-      transactionBuilder.addOutput(
-          bchChangeReceiverAddress, bchChangeAfterFeeSatoshis.toInt());
+      var legacyaddr = Address.toLegacyAddress(bchChangeReceiverAddress);
+      var cashaddr = Address.toCashAddress(legacyaddr);
+      transactionBuilder.addOutput(cashaddr, bchChangeAfterFeeSatoshis.toInt());
     }
 
     // Sign txn and add sig to p2pkh input for convenience if wif is provided,
