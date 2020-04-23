@@ -43,19 +43,6 @@ class SLP {
     return slpMsg;
   }
 
-  getUtxos(String address) async {
-    // must be a cash addr
-    var res;
-    try {
-      Address.toLegacyAddress(address);
-    } catch (_) {
-      throw new Exception(
-          "Not an a valid address format, must be cashAddr or Legacy address format.");
-    }
-    res = await Address.utxo(address) as List<Utxo>;
-    return res;
-  }
-
   mapToSLPUtxoArray(List utxos, String xpriv) {
     List utxo = [];
     utxos.forEach((txo) => utxo.add({
@@ -74,7 +61,7 @@ class SLP {
       {String tokenId,
       double sendAmount,
       List inputUtxos,
-      List<String> tokenReceiverAddresseses,
+      String tokenReceiverAddress,
       String changeReceiverAddress,
       List requiredNonTokenOutputs,
       int extraFee = 0,
@@ -83,11 +70,9 @@ class SLP {
     if (tokenId is! String) {
       return Exception("Token id should be a String");
     }
-    tokenReceiverAddresseses.forEach((addr) {
-      if (addr is! String) {
-        throw new Exception("Token id should be a String");
-      }
-    });
+    if (tokenReceiverAddress is! String) {
+      throw new Exception("Token address should be a String");
+    }
     try {
       if (sendAmount > 0) {
         amount = BigInt.from(sendAmount);
@@ -100,42 +85,34 @@ class SLP {
     //    new receiver and send token change back to the sender
     BigInt totalTokenInputAmount = BigInt.from(0);
     inputUtxos.forEach((txo) =>
-        totalTokenInputAmount += preSendSlpJudgementCheck(txo, tokenId));
+        totalTokenInputAmount += _preSendSlpJudgementCheck(txo, tokenId));
 
     // 2 Compute the token Change amount.
     BigInt tokenChangeAmount = totalTokenInputAmount - amount;
+    bool sendChange = tokenChangeAmount > new BigInt.from(0);
 
     String txHex;
-    if (tokenChangeAmount > new BigInt.from(0)) {
-      // 3 Create the Send OP_RETURN message
-      var sendOpReturn = Send(HEX.decode(tokenId), [amount, tokenChangeAmount]);
-      // 4 Create the raw Send transaction hex
-      txHex = await buildRawSendTx(
-          slpSendOpReturn: sendOpReturn,
-          inputTokenUtxos: inputUtxos,
-          tokenReceiverAddress: tokenReceiverAddresseses,
-          bchChangeReceiverAddress: changeReceiverAddress,
-          requiredNonTokenOutputs: requiredNonTokenOutputs,
-          extraFee: extraFee);
-    } else if (tokenChangeAmount == new BigInt.from(0)) {
-      // 3 Create the Send OP_RETURN message
-      var sendOpReturn = Send(HEX.decode(tokenId), [amount]);
-      // 4 Create the raw Send transaction hex
-      txHex = await buildRawSendTx(
-          slpSendOpReturn: sendOpReturn,
-          inputTokenUtxos: inputUtxos,
-          tokenReceiverAddress: tokenReceiverAddresseses,
-          bchChangeReceiverAddress: null,
-          requiredNonTokenOutputs: requiredNonTokenOutputs,
-          extraFee: extraFee);
-    } else {
-      throw Exception('Token inputs less than the token outputs');
+    if (tokenChangeAmount < new BigInt.from(0)) {
+      return throw Exception('Token inputs less than the token outputs');
     }
+    // 3 Create the Send OP_RETURN message
+    var sendOpReturn = Send(HEX.decode(tokenId), [amount, tokenChangeAmount]);
+    // 4 Create the raw Send transaction hex
+    txHex = await _buildRawSendTx(
+        slpSendOpReturn: sendOpReturn,
+        inputTokenUtxos: inputUtxos,
+        tokenReceiverAddresses: sendChange
+            ? [tokenReceiverAddress, changeReceiverAddress]
+            : [tokenReceiverAddress],
+        bchChangeReceiverAddress: changeReceiverAddress,
+        requiredNonTokenOutputs: requiredNonTokenOutputs,
+        extraFee: extraFee);
+
     // Return raw hex for this transaction
     return txHex;
   }
 
-  BigInt preSendSlpJudgementCheck(Map txo, tokenID) {
+  BigInt _preSendSlpJudgementCheck(Map txo, tokenID) {
     if (txo['slpUtxoJudgement'] == "undefined" ||
         txo['slpUtxoJudgement'] == null ||
         txo['slpUtxoJudgement'] == "UNKNOWN") {
@@ -168,16 +145,16 @@ class SLP {
     return BigInt.from(0);
   }
 
-  buildRawSendTx(
+  _buildRawSendTx(
       {List<int> slpSendOpReturn,
       List inputTokenUtxos,
-      List tokenReceiverAddress,
+      List tokenReceiverAddresses,
       String bchChangeReceiverAddress,
       List requiredNonTokenOutputs,
       int extraFee,
       type = 0x01}) async {
     // Check proper address formats are given
-    tokenReceiverAddress.forEach((addr) {
+    tokenReceiverAddresses.forEach((addr) {
       if (!addr.startsWith('simpleledger:')) {
         throw new Exception("Token receiver address not in SlpAddr format.");
       }
@@ -225,7 +202,7 @@ class SLP {
     if (!sendMsgData.containsKey('amounts')) {
       throw Exception("OP_RETURN contains no SLP send outputs.");
     }
-    if (tokenReceiverAddress.length + chgAddr !=
+    if (tokenReceiverAddresses.length + chgAddr !=
         sendMsgData['amounts'].length) {
       throw Exception(
           "Number of token receivers in config does not match the OP_RETURN outputs");
@@ -260,8 +237,8 @@ class SLP {
         : bcOnlyOutputSatoshis = bcOnlyOutputSatoshis;
 
     // Calculate mining fee cost
-    int sendCost = calculateSendCost(slpSendOpReturn.length,
-        inputTokenUtxos.length, tokenReceiverAddress.length + bchOnlyCount,
+    int sendCost = _calculateSendCost(slpSendOpReturn.length,
+        inputTokenUtxos.length, tokenReceiverAddresses.length + bchOnlyCount,
         bchChangeAddress: bchChangeReceiverAddress,
         feeRate: extraFee != null ? extraFee : 0);
 
@@ -274,7 +251,7 @@ class SLP {
     transactionBuilder.addOutput(compile(slpSendOpReturn), 0);
 
     // Add dust outputs associated with tokens
-    tokenReceiverAddress.forEach((outputAddress) {
+    tokenReceiverAddresses.forEach((outputAddress) {
       outputAddress = Address.toLegacyAddress(outputAddress);
       outputAddress = Address.toCashAddress(outputAddress);
       transactionBuilder.addOutput(outputAddress, 546);
@@ -327,11 +304,10 @@ class SLP {
       throw Exception(
           "Transaction input BCH amount is too low.  Add more BCH inputs to fund this transaction.");
     }
-    var txid = await RawTransactions.sendRawTransaction(hex);
-    return txid;
+    return hex;
   }
 
-  int calculateSendCost(int sendOpReturnLength, int inputUtxoSize, int outputs,
+  int _calculateSendCost(int sendOpReturnLength, int inputUtxoSize, int outputs,
       {String bchChangeAddress, int feeRate = 1, bool forTokens = true}) {
     int nonfeeoutputs = 0;
     if (forTokens) {
@@ -355,7 +331,7 @@ class SLP {
     Todo
    */
 
-  createSimpleToken(
+  _createSimpleToken(
       {String tokenName,
       String tokenTicker,
       int tokenAmount,
