@@ -81,8 +81,8 @@ class SLP {
       return Exception("Invalid amount");
     }
 
-    // 1 Set the token send amounts, we'll send 100 tokens to a
-    //    new receiver and send token change back to the sender
+    // 1 Set the token send amounts, send tokens to a
+    // new receiver and send token change back to the sender
     BigInt totalTokenInputAmount = BigInt.from(0);
     inputUtxos.forEach((txo) =>
         totalTokenInputAmount += _preSendSlpJudgementCheck(txo, tokenId));
@@ -271,8 +271,7 @@ class SLP {
       transactionBuilder.addOutput(cashaddr, bchChangeAfterFeeSatoshis.toInt());
     }
 
-    // Sign txn and add sig to p2pkh input for convenience if wif is provided,
-    // otherwise skip signing.
+    // Sign txn and add sig to p2pkh input with xpriv,
     var inp = 0;
     inputTokenUtxos.forEach((i) {
       if (!i.containsKey('xpriv')) {
@@ -287,12 +286,16 @@ class SLP {
     // Build the transaction to hex and return
     // warn user if the transaction was not fully signed
     String hex = transactionBuilder.build().toHex();
+
     // Check For Low Fee
     int outValue = 0;
     transactionBuilder.tx.outputs.forEach((o) => outValue += o.value);
     int inValue = 0;
     inputTokenUtxos.forEach((i) => inValue += i['satoshis'].toInt());
     if (inValue - outValue < hex.length / 2) {
+      print('inValue: $inValue');
+      print('outValue: $outValue');
+      print('hex: $hex');
       throw Exception(
           "Transaction input BCH amount is too low.  Add more BCH inputs to fund this transaction.");
     }
