@@ -61,8 +61,10 @@ class SLP {
       {String tokenId,
       double sendAmount,
       List inputUtxos,
+      List bchInputUtxos,
       String tokenReceiverAddress,
-      String changeReceiverAddress,
+      String slpChangeReceiverAddress,
+      String bchChangeReceiverAddress,
       List requiredNonTokenOutputs,
       int extraFee,
       int type = 0x01}) async {
@@ -71,7 +73,13 @@ class SLP {
       return Exception("Token id should be a String");
     }
     if (tokenReceiverAddress is! String) {
-      throw new Exception("Token address should be a String");
+      throw new Exception("Token receiving address should be a String");
+    }
+    if (slpChangeReceiverAddress is! String) {
+      throw new Exception("Slp change receiving address should be a String");
+    }
+    if (bchChangeReceiverAddress is! String) {
+      throw new Exception("Bch change receiving address should be a String");
     }
     try {
       if (sendAmount > 0) {
@@ -105,10 +113,11 @@ class SLP {
     txHex = await _buildRawSendTx(
         slpSendOpReturn: sendOpReturn,
         inputTokenUtxos: inputUtxos,
+        bchInputUtxos: bchInputUtxos,
         tokenReceiverAddresses: sendChange
-            ? [tokenReceiverAddress, changeReceiverAddress]
+            ? [tokenReceiverAddress, slpChangeReceiverAddress]
             : [tokenReceiverAddress],
-        bchChangeReceiverAddress: changeReceiverAddress,
+        bchChangeReceiverAddress: bchChangeReceiverAddress,
         requiredNonTokenOutputs: requiredNonTokenOutputs,
         extraFee: extraFee);
 
@@ -152,6 +161,7 @@ class SLP {
   _buildRawSendTx(
       {List<int> slpSendOpReturn,
       List inputTokenUtxos,
+      List bchInputUtxos,
       List tokenReceiverAddresses,
       String bchChangeReceiverAddress,
       List requiredNonTokenOutputs,
@@ -165,9 +175,9 @@ class SLP {
     });
 
     if (bchChangeReceiverAddress != null) {
-      if (!bchChangeReceiverAddress.startsWith('simpleledger:')) {
+      if (!bchChangeReceiverAddress.startsWith('bitcoincash:')) {
         throw new Exception(
-            "BCH/SLP token change receiver address is not in SlpAddr format.");
+            "BCH change receiver address is not in CashAddr format.");
       }
     }
 
@@ -219,31 +229,17 @@ class SLP {
     //  let sequence = 0xffffffff - 1;
 
     // Calculate the total input amount & add all inputs to the transaction
-
     var inputSatoshis = BigInt.from(0);
     inputTokenUtxos.forEach((i) {
       inputSatoshis += i['satoshis'];
       transactionBuilder.addInput(i['txid'], i['vout']);
     });
 
-    // Calculate the amount of outputs set aside for special BCH-only outputs for fee calculation
-    var bchOnlyCount =
-        requiredNonTokenOutputs != null ? requiredNonTokenOutputs.length : 0;
-    BigInt bchOnlyOutputSatoshis = BigInt.from(0);
-    requiredNonTokenOutputs != null
-        ? requiredNonTokenOutputs
-            .forEach((o) => bchOnlyOutputSatoshis += BigInt.from(o['satoshis']))
-        : bchOnlyOutputSatoshis = bchOnlyOutputSatoshis;
-
-    // Calculate mining fee cost
-    int sendCost = _calculateSendCost(slpSendOpReturn.length,
-        inputTokenUtxos.length, tokenReceiverAddresses.length + bchOnlyCount,
-        bchChangeAddress: bchChangeReceiverAddress,
-        feeRate: extraFee != null ? extraFee : 1);
-
-    // Compute BCH change amount
-    BigInt bchChangeAfterFeeSatoshis =
-        inputSatoshis - BigInt.from(sendCost) - bchOnlyOutputSatoshis;
+    // Calculate the total BCH input amount & add all inputs to the transaction
+    bchInputUtxos.forEach((i) {
+      inputSatoshis += BigInt.from(i['satoshis']);
+      transactionBuilder.addInput(i['txid'], i['vout']);
+    });
 
     // Start adding outputs to transaction
     // Add SLP SEND OP_RETURN message
@@ -256,35 +252,67 @@ class SLP {
       transactionBuilder.addOutput(outputAddress, 546);
     });
 
+    // Calculate the amount of outputs set aside for special BCH-only outputs for fee calculation
+    var bchOnlyCount =
+        requiredNonTokenOutputs != null ? requiredNonTokenOutputs.length : 0;
+    BigInt bchOnlyOutputSatoshis = BigInt.from(0);
+    requiredNonTokenOutputs != null
+        ? requiredNonTokenOutputs
+            .forEach((o) => bchOnlyOutputSatoshis += BigInt.from(o['satoshis']))
+        : bchOnlyOutputSatoshis = bchOnlyOutputSatoshis;
+
     // Add BCH-only outputs
     var outputAddress;
     if (requiredNonTokenOutputs != null) {
       if (requiredNonTokenOutputs.length > 0) {
         requiredNonTokenOutputs.forEach((output) {
-          outputAddress = Address.toLegacyAddress(output.receiverAddress);
-          outputAddress = Address.toCashAddress(outputAddress);
           transactionBuilder.addOutput(outputAddress, output.satoshis);
         });
       }
     }
 
+    // Calculate mining fee cost
+    int sendCost = _calculateSendCost(
+        slpSendOpReturn.length,
+        inputTokenUtxos.length + bchInputUtxos.length,
+        tokenReceiverAddresses.length + bchOnlyCount,
+        bchChangeAddress: bchChangeReceiverAddress,
+        feeRate: extraFee != null ? extraFee : 1);
+
+    // Compute BCH change amount
+    BigInt bchChangeAfterFeeSatoshis =
+        inputSatoshis - BigInt.from(sendCost) - bchOnlyOutputSatoshis;
+    if (bchChangeAfterFeeSatoshis < BigInt.from(0)) {
+      return "Insufficient fees";
+    }
+
     // Add change, if any
     if (bchChangeAfterFeeSatoshis > new BigInt.from(546)) {
-      var legacyaddr = Address.toLegacyAddress(bchChangeReceiverAddress);
-      var cashaddr = Address.toCashAddress(legacyaddr);
-      transactionBuilder.addOutput(cashaddr, bchChangeAfterFeeSatoshis.toInt());
+      transactionBuilder.addOutput(
+          bchChangeReceiverAddress, bchChangeAfterFeeSatoshis.toInt());
     }
 
     // Sign txn and add sig to p2pkh input with xpriv,
-    var inp = 0;
+    int slpIndex = 0;
     inputTokenUtxos.forEach((i) {
       if (!i.containsKey('xpriv')) {
         return throw Exception("Input doesnt contain a xpriv");
       }
       ECPair paymentKeyPair = HDNode.fromXPriv(i['xpriv']).keyPair;
-      transactionBuilder.sign(
-          inp, paymentKeyPair, i['satoshis'].toInt(), Transaction.SIGHASH_ALL);
-      inp++;
+      transactionBuilder.sign(slpIndex, paymentKeyPair, i['satoshis'].toInt(),
+          Transaction.SIGHASH_ALL);
+      slpIndex++;
+    });
+
+    int bchIndex = inputTokenUtxos.length;
+    bchInputUtxos.forEach((i) {
+      if (!i.containsKey('xpriv')) {
+        return throw Exception("Input doesnt contain a xpriv");
+      }
+      ECPair paymentKeyPair = HDNode.fromXPriv(i['xpriv']).keyPair;
+      transactionBuilder.sign(bchIndex, paymentKeyPair, i['satoshis'].toInt(),
+          Transaction.SIGHASH_ALL);
+      bchIndex++;
     });
 
     // Build the transaction to hex and return
@@ -296,6 +324,7 @@ class SLP {
     transactionBuilder.tx.outputs.forEach((o) => outValue += o.value);
     int inValue = 0;
     inputTokenUtxos.forEach((i) => inValue += i['satoshis'].toInt());
+    bchInputUtxos.forEach((i) => inValue += i['satoshis']);
     if (inValue - outValue < hex.length / 2) {
       print('inValue: $inValue');
       print('outValue: $outValue');
