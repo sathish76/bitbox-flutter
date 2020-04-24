@@ -83,7 +83,9 @@ class SLP {
     }
     try {
       if (sendAmount > 0) {
-        amount = BigInt.from(sendAmount);
+        var tokenInfo = await SLP().getTokenInformation(tokenId);
+        int decimals = tokenInfo['data']['decimals'];
+        amount = BigInt.from(sendAmount * math.pow(10, decimals));
       }
     } catch (e) {
       return Exception("Invalid amount");
