@@ -9,12 +9,9 @@ import 'dart:math' as math;
 
 class SLP {
   getTokenInformation(String tokenID, [bool decimalConversion = false]) async {
-    Response response;
     var res;
     try {
-      response =
-          await RawTransactions.getRawtransaction(tokenID, verbose: true);
-      res = jsonDecode(response.body);
+      res = await RawTransactions.getRawtransaction(tokenID, verbose: true);
       if (res.containsKey('error')) {
         throw Exception(
             "BITBOX response error for 'RawTransactions.getRawTransaction'");
