@@ -56,7 +56,7 @@ class SLP {
 
   simpleTokenSend(
       {String tokenId,
-      double sendAmount,
+      num sendAmount,
       List inputUtxos,
       List bchInputUtxos,
       String tokenReceiverAddress,
