@@ -102,7 +102,6 @@ class SLP {
     BigInt tokenChangeAmount = totalTokenInputAmount - totalAmount;
     bool sendChange = tokenChangeAmount > new BigInt.from(0);
 
-    String txHex;
     if (tokenChangeAmount < new BigInt.from(0)) {
       return throw Exception('Token inputs less than the token outputs');
     }
@@ -116,7 +115,7 @@ class SLP {
     // 3 Create the Send OP_RETURN message
     var sendOpReturn = Send(HEX.decode(tokenId), amounts);
     // 4 Create the raw Send transaction hex
-    txHex = await _buildRawSendTx(
+    Map result = await _buildRawSendTx(
         slpSendOpReturn: sendOpReturn,
         inputTokenUtxos: inputUtxos,
         bchInputUtxos: bchInputUtxos,
@@ -124,9 +123,7 @@ class SLP {
         bchChangeReceiverAddress: bchChangeReceiverAddress,
         requiredNonTokenOutputs: requiredNonTokenOutputs,
         extraFee: extraFee);
-
-    // Return raw hex for this transaction
-    return txHex;
+    return result;
   }
 
   BigInt _preSendSlpJudgementCheck(Map txo, tokenID) {
