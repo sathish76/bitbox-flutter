@@ -66,7 +66,7 @@ class SLP {
       int extraFee,
       int type = 0x01}) async {
     List<BigInt> amounts;
-    BigInt totalAmount;
+    BigInt totalAmount = BigInt.from(0);
     if (tokenId is! String) {
       return Exception("Token id should be a String");
     }
