@@ -56,22 +56,25 @@ class SLP {
 
   simpleTokenSend(
       {String tokenId,
-      num sendAmount,
+      List<num> sendAmounts,
       List inputUtxos,
       List bchInputUtxos,
-      String tokenReceiverAddress,
+      List<String> tokenReceiverAddresses,
       String slpChangeReceiverAddress,
       String bchChangeReceiverAddress,
       List requiredNonTokenOutputs,
       int extraFee,
       int type = 0x01}) async {
-    BigInt amount;
+    List<BigInt> amounts;
+    BigInt totalAmount;
     if (tokenId is! String) {
       return Exception("Token id should be a String");
     }
-    if (tokenReceiverAddress is! String) {
-      throw new Exception("Token receiving address should be a String");
-    }
+    tokenReceiverAddresses.forEach((tokenReceiverAddress) {
+      if (tokenReceiverAddress is! String) {
+        throw new Exception("Token receiving address should be a String");
+      }
+    });
     if (slpChangeReceiverAddress is! String) {
       throw new Exception("Slp change receiving address should be a String");
     }
@@ -79,11 +82,14 @@ class SLP {
       throw new Exception("Bch change receiving address should be a String");
     }
     try {
-      if (sendAmount > 0) {
-        var tokenInfo = await getTokenInformation(tokenId);
-        int decimals = tokenInfo['data']['decimals'];
-        amount = BigInt.from(sendAmount * math.pow(10, decimals));
-      }
+      sendAmounts.forEach((sendAmount) async {
+        if (sendAmount > 0) {
+          var tokenInfo = await getTokenInformation(tokenId);
+          int decimals = tokenInfo['data']['decimals'];
+          totalAmount += BigInt.from(sendAmount * math.pow(10, decimals));
+          amounts.add(BigInt.from(sendAmount * math.pow(10, decimals)));
+        }
+      });
     } catch (e) {
       return Exception("Invalid amount");
     }
@@ -95,27 +101,29 @@ class SLP {
         totalTokenInputAmount += _preSendSlpJudgementCheck(txo, tokenId));
 
     // 2 Compute the token Change amount.
-    BigInt tokenChangeAmount = totalTokenInputAmount - amount;
+    BigInt tokenChangeAmount = totalTokenInputAmount - totalAmount;
     bool sendChange = tokenChangeAmount > new BigInt.from(0);
 
     String txHex;
     if (tokenChangeAmount < new BigInt.from(0)) {
       return throw Exception('Token inputs less than the token outputs');
     }
+
+    if (tokenChangeAmount > BigInt.from(0)) {
+      amounts.add(tokenChangeAmount);
+    }
+
+    if (sendChange) {
+      tokenReceiverAddresses.add(slpChangeReceiverAddress);
+    }
     // 3 Create the Send OP_RETURN message
-    var sendOpReturn = Send(
-        HEX.decode(tokenId),
-        tokenChangeAmount > BigInt.from(0)
-            ? [amount, tokenChangeAmount]
-            : [amount]);
+    var sendOpReturn = Send(HEX.decode(tokenId), amounts);
     // 4 Create the raw Send transaction hex
     txHex = await _buildRawSendTx(
         slpSendOpReturn: sendOpReturn,
         inputTokenUtxos: inputUtxos,
         bchInputUtxos: bchInputUtxos,
-        tokenReceiverAddresses: sendChange
-            ? [tokenReceiverAddress, slpChangeReceiverAddress]
-            : [tokenReceiverAddress],
+        tokenReceiverAddresses: tokenReceiverAddresses,
         bchChangeReceiverAddress: bchChangeReceiverAddress,
         requiredNonTokenOutputs: requiredNonTokenOutputs,
         extraFee: extraFee);
