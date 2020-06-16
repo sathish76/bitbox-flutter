@@ -65,7 +65,7 @@ class SLP {
       List requiredNonTokenOutputs,
       int extraFee,
       int type = 0x01}) async {
-    List<BigInt> amounts;
+    List<BigInt> amounts = [];
     BigInt totalAmount = BigInt.from(0);
     if (tokenId is! String) {
       return Exception("Token id should be a String");
@@ -81,18 +81,16 @@ class SLP {
     if (bchChangeReceiverAddress is! String) {
       throw new Exception("Bch change receiving address should be a String");
     }
-    try {
-      sendAmounts.forEach((sendAmount) async {
-        if (sendAmount > 0) {
-          var tokenInfo = await getTokenInformation(tokenId);
-          int decimals = tokenInfo['data']['decimals'];
-          totalAmount += BigInt.from(sendAmount * math.pow(10, decimals));
-          amounts.add(BigInt.from(sendAmount * math.pow(10, decimals)));
-        }
-      });
-    } catch (e) {
-      return Exception("Invalid amount");
-    }
+
+    var tokenInfo = await getTokenInformation(tokenId);
+    int decimals = tokenInfo['data']['decimals'];
+
+    sendAmounts.forEach((sendAmount) async {
+      if (sendAmount > 0) {
+        totalAmount += BigInt.from(sendAmount * math.pow(10, decimals));
+        amounts.add(BigInt.from(sendAmount * math.pow(10, decimals)));
+      }
+    });
 
     // 1 Set the token send amounts, send tokens to a
     // new receiver and send token change back to the sender
@@ -108,7 +106,6 @@ class SLP {
     if (tokenChangeAmount < new BigInt.from(0)) {
       return throw Exception('Token inputs less than the token outputs');
     }
-
     if (tokenChangeAmount > BigInt.from(0)) {
       amounts.add(tokenChangeAmount);
     }
@@ -290,7 +287,7 @@ class SLP {
     BigInt bchChangeAfterFeeSatoshis =
         inputSatoshis - BigInt.from(sendCost) - bchOnlyOutputSatoshis;
     if (bchChangeAfterFeeSatoshis < BigInt.from(0)) {
-      return "Insufficient fees";
+      return {'hex': null, 'fee': "Insufficient fees"};
     }
 
     // Add change, if any
@@ -333,13 +330,9 @@ class SLP {
     inputTokenUtxos.forEach((i) => inValue += i['satoshis'].toInt());
     bchInputUtxos.forEach((i) => inValue += i['satoshis']);
     if (inValue - outValue < hex.length / 2) {
-      print('inValue: $inValue');
-      print('outValue: $outValue');
-      print('hex: $hex');
-      throw Exception(
-          "Transaction input BCH amount is too low.  Add more BCH inputs to fund this transaction.");
+      return {'hex': null, 'fee': "Insufficient fee"};
     }
-    return hex;
+    return {'hex': hex, 'fee': sendCost};
   }
 
   int _calculateSendCost(int sendOpReturnLength, int inputUtxoSize, int outputs,
