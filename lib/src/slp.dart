@@ -40,11 +40,12 @@ class SLP {
     return slpMsg;
   }
 
-  mapToSLPUtxoArray(List utxos, String xpriv) {
+  mapToSLPUtxoArray(List utxos, String xpriv, [String wif]) {
     List utxo = [];
     utxos.forEach((txo) => utxo.add({
           'satoshis': new BigInt.from(txo['satoshis']),
           'xpriv': xpriv,
+          'wif': wif,
           'txid': txo['txid'],
           'vout': txo['vout'],
           'slpTransactionDetails': txo['slpTransactionDetails'],
@@ -296,10 +297,14 @@ class SLP {
     // Sign txn and add sig to p2pkh input with xpriv,
     int slpIndex = 0;
     inputTokenUtxos.forEach((i) {
-      if (!i.containsKey('xpriv')) {
-        return throw Exception("Input doesnt contain a xpriv");
+      ECPair paymentKeyPair;
+      String xpriv = i['xpriv'];
+      String wif = i['wif'];
+      if (xpriv != null) {
+        paymentKeyPair = HDNode.fromXPriv(xpriv).keyPair;
+      } else {
+        paymentKeyPair = ECPair.fromWIF(wif);
       }
-      ECPair paymentKeyPair = HDNode.fromXPriv(i['xpriv']).keyPair;
       transactionBuilder.sign(slpIndex, paymentKeyPair, i['satoshis'].toInt(),
           Transaction.SIGHASH_ALL);
       slpIndex++;
@@ -307,10 +312,14 @@ class SLP {
 
     int bchIndex = inputTokenUtxos.length;
     bchInputUtxos.forEach((i) {
-      if (!i.containsKey('xpriv')) {
-        return throw Exception("Input doesnt contain a xpriv");
+      ECPair paymentKeyPair;
+      String xpriv = i['xpriv'];
+      String wif = i['wif'];
+      if (xpriv != null) {
+        paymentKeyPair = HDNode.fromXPriv(xpriv).keyPair;
+      } else {
+        paymentKeyPair = ECPair.fromWIF(wif);
       }
-      ECPair paymentKeyPair = HDNode.fromXPriv(i['xpriv']).keyPair;
       transactionBuilder.sign(bchIndex, paymentKeyPair, i['satoshis'].toInt(),
           Transaction.SIGHASH_ALL);
       bchIndex++;
