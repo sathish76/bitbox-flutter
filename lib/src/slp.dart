@@ -40,7 +40,7 @@ class SLP {
     return slpMsg;
   }
 
-  mapToSLPUtxoArray(List utxos, String xpriv, [String wif]) {
+  mapToSLPUtxoArray({List utxos, String xpriv, String wif}) {
     List utxo = [];
     utxos.forEach((txo) => utxo.add({
           'satoshis': new BigInt.from(txo['satoshis']),
