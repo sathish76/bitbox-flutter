@@ -264,11 +264,11 @@ class SLP {
         : bchOnlyOutputSatoshis = bchOnlyOutputSatoshis;
 
     // Add BCH-only outputs
-    var outputAddress;
     if (requiredNonTokenOutputs != null) {
       if (requiredNonTokenOutputs.length > 0) {
         requiredNonTokenOutputs.forEach((output) {
-          transactionBuilder.addOutput(outputAddress, output.satoshis);
+          transactionBuilder.addOutput(
+              output['bchaddress'], output['satoshis']);
         });
       }
     }
