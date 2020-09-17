@@ -173,6 +173,18 @@ class Address {
   /// Converts legacy address to cash address
   static String toCashAddress(String address, [bool includePrefix = true]) {
     final decoded = _decode(address);
+    switch (decoded["prefix"]) {
+      case 'bitcoincash':
+      case 'simpleledger':
+        decoded['prefix'] = "bitcoincash";
+        break;
+      case 'bchtest':
+      case 'slptest':
+        decoded['prefix'] = "bchtest";
+        break;
+      default:
+        throw FormatException("Unsupported address format: $address");
+    }
     final cashAddress =
         _encode(decoded['prefix'], decoded['type'], decoded["hash"]);
     if (!includePrefix) {
@@ -184,7 +196,19 @@ class Address {
 
   /// Converts legacy or cash address to SLP address
   static String toSLPAddress(String address, [bool includePrefix = true]) {
-    final decoded = _decode(address);
+    final decoded = Address._decode(address);
+    switch (decoded["prefix"]) {
+      case 'bitcoincash':
+      case 'simpleledger':
+        decoded['prefix'] = "simpleledger";
+        break;
+      case 'bchtest':
+      case 'slptest':
+        decoded['prefix'] = "slptest";
+        break;
+      default:
+        throw FormatException("Unsupported address format: $address");
+    }
     final slpAddress =
         Address._encode(decoded['prefix'], decoded['type'], decoded["hash"]);
     if (!includePrefix) {
@@ -195,15 +219,15 @@ class Address {
   }
 
   static bool isLegacyAddress(String address) {
-    return detectAddressFormat(address) == 'legacy';
+    return detectAddressFormat(address) == formatLegacy;
   }
 
   static bool isCashAddress(String address) {
-    return detectAddressFormat(address) == 'cashaddr';
+    return detectAddressFormat(address) == formatCashAddr;
   }
 
   static bool isSlpAddress(String address) {
-    return detectAddressFormat(address) == 'slpaddr';
+    return detectAddressFormat(address) == formatSlp;
   }
 
   /// Detects type of the address and returns [legacy], [cashaddr] or [slpaddr]
@@ -379,28 +403,23 @@ class Address {
 
     switch (buffer.first) {
       case Network.bchPublic:
-        decoded = {
-          'prefix': "bitcoincash",
-          'type': "P2PKH",
-        };
+        decoded['prefix'] = "bitcoincash";
+        decoded['type'] = "P2PKH";
         break;
+
       case Network.bchPublicscriptHash:
-        decoded = {
-          'prefix': "bitcoincash",
-          'type': "P2SH",
-        };
+        decoded['prefix'] = "bitcoincash";
+        decoded['type'] = "P2SH";
         break;
+
       case Network.bchTestnetPublic:
-        decoded = {
-          'prefix': "bchtest",
-          'type': "P2PKH",
-        };
+        decoded['prefix'] = "bchtest";
+        decoded['type'] = "P2PKH";
         break;
+
       case Network.bchTestnetscriptHash:
-        decoded = {
-          'prefix': "bchtest",
-          'type': "P2SH",
-        };
+        decoded['prefix'] = "bchtest";
+        decoded['type'] = "P2SH";
         break;
     }
     return decoded;
@@ -525,7 +544,7 @@ class Address {
         "prefix": prefixes[i],
         "type": type,
         "hash": hash,
-        "format": 'slpaddr'
+        "format": formatSlp
       };
     }
 
