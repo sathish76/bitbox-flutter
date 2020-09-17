@@ -11,8 +11,9 @@ import 'package:fixnum/fixnum.dart';
 /// There is no reason to instanciate this class. All constants, functions, and methods are static.
 /// It is assumed that all necessary data to work with addresses are kept in the instance of [ECPair] or [Transaction]
 class Address {
-  static const formatCashAddr = 0;
-  static const formatLegacy = 1;
+  static const formatCashAddr = 'cashaddr';
+  static const formatLegacy = 'legacy';
+  static const formatSlp = 'slpaddr';
 
   static const _CHARSET = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l';
   static const _CHARSET_INVERSE_INDEX = {
@@ -141,23 +142,11 @@ class Address {
     }
   }
 
-  /// Converts legacy address to cash address
-  static String toCashAddress(String legacyAddress,
-      [bool includePrefix = true]) {
-    final decoded = Address._decodeLegacyAddress(legacyAddress);
-    final cashAddress =
-        Address._encode(decoded['prefix'], decoded['type'], decoded["hash"]);
-    if (!includePrefix) {
-      return cashAddress.split(":")[1];
-    } else {
-      return cashAddress;
-    }
-  }
-
   /// Converts cashAddr format to legacy address
-  static String toLegacyAddress(String cashAddress) {
-    final decoded = _decodeCashAddress(cashAddress);
-    final testnet = decoded['prefix'] == "bchtest";
+  static String toLegacyAddress(String address) {
+    final decoded = _decode(address);
+    final testnet =
+        decoded['prefix'] == "bchtest" || decoded['prefix'] == "slptest";
     var version;
     if (testnet) {
       switch (decoded['type']) {
@@ -181,19 +170,21 @@ class Address {
     return toBase58Check(decoded["hash"], version);
   }
 
+  /// Converts legacy address to cash address
+  static String toCashAddress(String address, [bool includePrefix = true]) {
+    final decoded = _decode(address);
+    final cashAddress =
+        _encode(decoded['prefix'], decoded['type'], decoded["hash"]);
+    if (!includePrefix) {
+      return cashAddress.split(":")[1];
+    } else {
+      return cashAddress;
+    }
+  }
+
   /// Converts legacy or cash address to SLP address
   static String toSLPAddress(String address, [bool includePrefix = true]) {
-    final decoded = Address._decode(address);
-    switch (decoded["prefix"]) {
-      case 'bitcoincash':
-        decoded['prefix'] = "simpleledger";
-        break;
-      case 'bchtest':
-        decoded['prefix'] = "slptest";
-        break;
-      default:
-        throw FormatException("Unsupported address format: $address");
-    }
+    final decoded = _decode(address);
     final slpAddress =
         Address._encode(decoded['prefix'], decoded['type'], decoded["hash"]);
     if (!includePrefix) {
@@ -203,8 +194,20 @@ class Address {
     }
   }
 
-  /// Detects type of the address and returns [formatCashAddr] or [formatLegacy]
-  static int detectFormat(String address) {
+  static bool isLegacyAddress(String address) {
+    return detectAddressFormat(address) == 'legacy';
+  }
+
+  static bool isCashAddress(String address) {
+    return detectAddressFormat(address) == 'cashaddr';
+  }
+
+  static bool isSlpAddress(String address) {
+    return detectAddressFormat(address) == 'slpaddr';
+  }
+
+  /// Detects type of the address and returns [legacy], [cashaddr] or [slpaddr]
+  static String detectAddressFormat(String address) {
     // decode the address to determine the format
     final decoded = _decode(address);
     // return the format
@@ -342,8 +345,9 @@ class Address {
   }
 
   /// Decodes the given address into:
-  /// * (for cashAddr): constituting prefix (e.g. _bitcoincash_)
   /// * (for legacy): version
+  /// * (for cashAddr): constituting prefix (e.g. _bitcoincash_)
+  ///* (for slpAddr): constituting prefix (e.g. _simpleledger_)
   /// * hash
   /// * format
   static Map<String, dynamic> _decode(String address) {
@@ -353,6 +357,10 @@ class Address {
 
     try {
       return _decodeCashAddress(address);
+    } catch (e) {}
+
+    try {
+      return _decodeSlpAddress(address);
     } catch (e) {}
 
     throw FormatException("Invalid address format : $address");
@@ -366,7 +374,7 @@ class Address {
       'prefix': "",
       'type': "",
       'hash': buffer.sublist(1),
-      'format': ""
+      'format': formatLegacy
     };
 
     switch (buffer.first) {
@@ -374,32 +382,24 @@ class Address {
         decoded = {
           'prefix': "bitcoincash",
           'type': "P2PKH",
-          'hash': buffer.sublist(1),
-          'format': "legacy"
         };
         break;
       case Network.bchPublicscriptHash:
         decoded = {
           'prefix': "bitcoincash",
           'type': "P2SH",
-          'hash': buffer.sublist(1),
-          'format': "legacy"
         };
         break;
       case Network.bchTestnetPublic:
         decoded = {
           'prefix': "bchtest",
           'type': "P2PKH",
-          'hash': buffer.sublist(1),
-          'format': "legacy"
         };
         break;
       case Network.bchTestnetscriptHash:
         decoded = {
           'prefix': "bchtest",
           'type': "P2SH",
-          'hash': buffer.sublist(1),
-          'format': "legacy"
         };
         break;
     }
@@ -463,6 +463,69 @@ class Address {
         "type": type,
         "hash": hash,
         "format": formatCashAddr
+      };
+    }
+
+    // if the loop went through all possible formats and didn't return data from the function, it means there were
+    // validation issues. Throw a format exception
+    throw FormatException(exception);
+  }
+
+  static Map<String, dynamic> _decodeSlpAddress(String address) {
+    if (!_hasSingleCase(address)) {
+      throw FormatException("Address has both lower and upper case: $address");
+    }
+
+    // split the address with : separator to find out it if contains prefix
+    final pieces = address.toLowerCase().split(":");
+
+    // placeholder for different prefixes to be tested later
+    List<String> prefixes;
+
+    // check if the address contained : separator by looking at number of splitted pieces
+    if (pieces.length == 2) {
+      // if it contained the separator, use the first piece as a single prefix
+      prefixes = <String>[pieces.first];
+      address = pieces.last;
+    } else if (pieces.length == 1) {
+      // if it came without separator, try all three possible formats
+      prefixes = <String>["simpleledger", "slptest", "slpreg"];
+    } else {
+      // if it came with more than one separator, throw a format exception
+      throw FormatException("Invalid Address Format: $address");
+    }
+
+    String exception;
+
+    // try to decode the address with either one or all three possible prefixes
+    for (int i = 0; i < prefixes.length; i++) {
+      final payload = _base32Decode(address);
+
+      if (!_validChecksum(prefixes[i], payload)) {
+        exception = "Invalid checksum: $address";
+        continue;
+      }
+
+      final payloadData =
+          _fromUint5Array(payload.sublist(0, payload.length - 8));
+
+      var versionByte = payloadData[0];
+      final hash = payloadData.sublist(1);
+
+      if (_getHashSize(payloadData[0]) != hash.length * 8) {
+        exception = "Invalid hash size: $address";
+        continue;
+      }
+
+      var type = _getType(versionByte);
+
+      // If the loop got all the way here, it means validations went through and the address was decoded.
+      // Return the decoded data
+      return <String, dynamic>{
+        "prefix": prefixes[i],
+        "type": type,
+        "hash": hash,
+        "format": 'slpaddr'
       };
     }
 

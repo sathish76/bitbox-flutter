@@ -135,7 +135,7 @@ class TransactionBuilder {
 
     Uint8List scriptPubKey;
     if (data is String) {
-      if (Address.detectFormat(data) == Address.formatCashAddr) {
+      if (Address.detectAddressFormat(data) == Address.formatCashAddr) {
         data = Address.toLegacyAddress(data);
       }
       scriptPubKey = _addressToOutputScript(data, _network);
