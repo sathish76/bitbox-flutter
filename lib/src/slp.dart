@@ -1,14 +1,13 @@
-import 'dart:convert';
 import 'dart:typed_data';
 import 'package:bitbox/bitbox.dart';
 import 'package:hex/hex.dart';
-import 'package:http/http.dart';
 import 'package:slp_mdm/slp_mdm.dart';
 import 'package:slp_parser/slp_parser.dart';
 import 'dart:math' as math;
 
 class SLP {
-  getTokenInformation(String tokenID, [bool decimalConversion = false]) async {
+  static getTokenInformation(String tokenID,
+      [bool decimalConversion = false]) async {
     var res;
     try {
       res = await RawTransactions.getRawtransaction(tokenID, verbose: true);
@@ -40,7 +39,40 @@ class SLP {
     return slpMsg;
   }
 
-  mapToSLPUtxoArray({List utxos, String xpriv, String wif}) {
+  static getAllSlpBalancesAndUtxos(String address) async {
+    List utxos = await mapToSlpAddressUtxoResultArray(address);
+    var txIds = [];
+    utxos.forEach((i) {
+      txIds.add(i['txid']);
+    });
+    if (txIds.length == 0) {
+      return [];
+    }
+  }
+
+  static Future<List> mapToSlpAddressUtxoResultArray(String address) async {
+    var result;
+    try {
+      result = await Address.utxo([address]);
+    } catch (e) {
+      return [];
+    }
+    List utxo = [];
+    return result['utxos'].forEach((txo) => utxo.add({
+          'satoshis': txo.satoshis,
+          'txid': txo.txid,
+          'amount': txo.amount,
+          'confirmations': txo.confirmations,
+          'height': txo.height,
+          'vout': txo.vout,
+          'cashAddress': result.cashAddress,
+          'legacyAddress': result.legacyAddress,
+          'slpAddress': Address.toSLPAddress(result.legacyAddress),
+          'scriptPubKey': result.scriptPubKey,
+        }));
+  }
+
+  static mapToSLPUtxoArray({List utxos, String xpriv, String wif}) {
     List utxo = [];
     utxos.forEach((txo) => utxo.add({
           'satoshis': new BigInt.from(txo['satoshis']),
@@ -48,14 +80,20 @@ class SLP {
           'wif': wif,
           'txid': txo['txid'],
           'vout': txo['vout'],
-          'slpTransactionDetails': txo['slpTransactionDetails'],
-          'slpUtxoJudgement': txo['slpUtxoJudgement'],
-          'slpUtxoJudgementAmount': txo['slpUtxoJudgementAmount'],
+          'utxoType': txo['utxoType'],
+          'transactionType': txo['transactionType'],
+          'tokenId': txo['tokenId'],
+          'tokenTicker': txo['tokenTicker'],
+          'tokenName': txo['tokenName'],
+          'decimals': txo['decimals'],
+          'tokenType': txo['tokenType'],
+          'tokenQty': txo['tokenQty'],
+          'isValid': txo['isValid'],
         }));
     return utxo;
   }
 
-  simpleTokenSend(
+  static simpleTokenSend(
       {String tokenId,
       List<num> sendAmounts,
       List inputUtxos,
@@ -127,48 +165,56 @@ class SLP {
     return result;
   }
 
-  BigInt _preSendSlpJudgementCheck(Map txo, tokenID) {
-    if (txo['slpUtxoJudgement'] == "undefined" ||
-        txo['slpUtxoJudgement'] == null ||
-        txo['slpUtxoJudgement'] == "UNKNOWN") {
-      throw Exception(
-          "There is at least one input UTXO that does not have a proper SLP judgement");
-    }
-    if (txo['slpUtxoJudgement'] == "UNSUPPORTED_TYPE") {
-      throw Exception(
-          "There is at least one input UTXO that is an Unsupported SLP type.");
-    }
-    if (txo['slpUtxoJudgement'] == "SLP_BATON") {
-      throw Exception(
-          "There is at least one input UTXO that is a baton. You can only spend batons in a MINT transaction.");
-    }
-    if (txo.containsKey('slpTransactionDetails')) {
-      if (txo['slpUtxoJudgement'] == "SLP_TOKEN") {
-        if (!txo.containsKey('slpUtxoJudgementAmount')) {
-          throw Exception(
-              "There is at least one input token that does not have the 'slpUtxoJudgementAmount' property set.");
-        }
-        if (txo['slpTransactionDetails']['tokenIdHex'] != tokenID) {
-          throw Exception(
-              "There is at least one input UTXO that is a different SLP token than the one specified.");
-        }
-        if (txo['slpTransactionDetails']['tokenIdHex'] == tokenID) {
-          return BigInt.from(double.parse(txo['slpUtxoJudgementAmount']));
-        }
+  static BigInt _preSendSlpJudgementCheck(Map txo, tokenID) {
+    // if (txo['slpUtxoJudgement'] == "undefined" ||
+    //     txo['slpUtxoJudgement'] == null ||
+    //     txo['slpUtxoJudgement'] == "UNKNOWN") {
+    //   throw Exception(
+    //       "There is at least one input UTXO that does not have a proper SLP judgement");
+    // }
+    // if (txo['slpUtxoJudgement'] == "UNSUPPORTED_TYPE") {
+    //   throw Exception(
+    //       "There is at least one input UTXO that is an Unsupported SLP type.");
+    // }
+    // if (txo['slpUtxoJudgement'] == "SLP_BATON") {
+    //   throw Exception(
+    //       "There is at least one input UTXO that is a baton. You can only spend batons in a MINT transaction.");
+    // }
+    //if (txo.containsKey('slpTransactionDetails')) {
+    //if (txo['slpUtxoJudgement'] == "SLP_TOKEN") {
+    if (txo['utxoType'] == "token") {
+      if (txo['transactionType'] != 'send') {
+        throw Exception(
+            "There is at least one input UTXO that does not have a proper SLP judgement");
+      }
+      //if (!txo.containsKey('slpUtxoJudgementAmount')) {
+      if (!txo.containsKey('tokenQty')) {
+        throw Exception(
+            "There is at least one input token that does not have the 'slpUtxoJudgementAmount' property set.");
+      }
+      //if (txo['slpTransactionDetails']['tokenIdHex'] != tokenID) {
+      if (txo['tokenId'] != tokenID) {
+        throw Exception(
+            "There is at least one input UTXO that is a different SLP token than the one specified.");
+      }
+      // if (txo['slpTransactionDetails']['tokenIdHex'] == tokenID) {
+      if (txo['tokenId'] == tokenID) {
+        //return BigInt.from(num.parse(txo['slpUtxoJudgementAmount']));
+        return BigInt.from(txo['tokenQty']);
       }
     }
+    // }
     return BigInt.from(0);
   }
 
-  _buildRawSendTx(
+  static _buildRawSendTx(
       {List<int> slpSendOpReturn,
       List inputTokenUtxos,
       List bchInputUtxos,
       List tokenReceiverAddresses,
       String bchChangeReceiverAddress,
       List requiredNonTokenOutputs,
-      int extraFee,
-      type = 0x01}) async {
+      int extraFee}) async {
     // Check proper address formats are given
     tokenReceiverAddresses.forEach((addr) {
       if (!addr.startsWith('simpleledger:')) {
@@ -190,25 +236,29 @@ class SLP {
     // Make sure we're not spending inputs from any other token or baton
     var tokenInputQty = new BigInt.from(0);
     inputTokenUtxos.forEach((txo) {
-      if (txo['slpUtxoJudgement'] == "NOT_SLP") {
+      //if (txo['slpUtxoJudgement'] == "NOT_SLP") {
+      if (!txo['isValid']) {
         return;
       }
-      if (txo['slpUtxoJudgement'] == "SLP_TOKEN") {
-        if (txo['slpTransactionDetails']['tokenIdHex'] !=
-            sendMsgData['tokenId']) {
+      //if (txo['slpUtxoJudgement'] == "SLP_TOKEN") {
+      if (txo['utxoType'] == "token") {
+        // if (txo['slpTransactionDetails']['tokenIdHex'] !=
+        //     sendMsgData['tokenId']) {
+        if (txo['tokenId'] != sendMsgData['tokenId']) {
           throw Exception("Input UTXOs included a token for another tokenId.");
         }
-        tokenInputQty +=
-            BigInt.from(double.parse(txo['slpUtxoJudgementAmount']));
+        // tokenInputQty +=
+        //     BigInt.from(double.parse(txo['slpUtxoJudgementAmount']));
+        tokenInputQty += BigInt.from(txo['tokenQty']);
         return;
       }
-      if (txo['slpUtxoJudgement'] == "SLP_BATON") {
-        throw Exception("Cannot spend a minting baton.");
-      }
-      if (txo['slpUtxoJudgement'] == ['INVALID_TOKEN_DAG'] ||
-          txo['slpUtxoJudgement'] == "INVALID_BATON_DAG") {
-        throw Exception("Cannot currently spend UTXOs with invalid DAGs.");
-      }
+      // if (txo['slpUtxoJudgement'] == "SLP_BATON") {
+      //   throw Exception("Cannot spend a minting baton.");
+      // }
+      // if (txo['slpUtxoJudgement'] == ['INVALID_TOKEN_DAG'] ||
+      //     txo['slpUtxoJudgement'] == "INVALID_BATON_DAG") {
+      //   throw Exception("Cannot currently spend UTXOs with invalid DAGs.");
+      // }
       throw Exception("Cannot spend utxo with no SLP judgement.");
     });
 
@@ -341,7 +391,8 @@ class SLP {
     return {'hex': hex, 'fee': sendCost};
   }
 
-  int _calculateSendCost(int sendOpReturnLength, int inputUtxoSize, int outputs,
+  static int _calculateSendCost(
+      int sendOpReturnLength, int inputUtxoSize, int outputs,
       {String bchChangeAddress, int feeRate = 1, bool forTokens = true}) {
     int nonfeeoutputs = 0;
     if (forTokens) {
