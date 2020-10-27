@@ -5,6 +5,7 @@ export 'src/address.dart';
 export 'src/bitbox.dart';
 export 'src/bitcoincash.dart';
 export 'src/block.dart';
+export 'src/blockchain.dart';
 export 'src/cashaccounts.dart';
 export 'src/crypto/crypto.dart';
 export 'src/ecpair.dart';
