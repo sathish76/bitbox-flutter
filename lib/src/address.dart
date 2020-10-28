@@ -623,6 +623,7 @@ class Address {
     for (int i = 0; i < data.length; ++i) {
       final value = data[i];
       final topBits = checksum >> 35;
+
       checksum = ((checksum & 0x07ffffffff) << 5) ^ value;
 
       for (int j = 0; j < GENERATOR.length; ++j) {

@@ -200,7 +200,7 @@ class SLP {
       // if (txo['slpTransactionDetails']['tokenIdHex'] == tokenID) {
       if (txo['tokenId'] == tokenID) {
         //return BigInt.from(num.parse(txo['slpUtxoJudgementAmount']));
-        return BigInt.from(txo['tokenQty']);
+        return BigInt.from(txo['tokenQty'] * math.pow(10, txo['decimals']));
       }
     }
     // }
@@ -249,7 +249,8 @@ class SLP {
         }
         // tokenInputQty +=
         //     BigInt.from(double.parse(txo['slpUtxoJudgementAmount']));
-        tokenInputQty += BigInt.from(txo['tokenQty']);
+        tokenInputQty +=
+            BigInt.from(txo['tokenQty'] * math.pow(10, txo['decimals']));
         return;
       }
       // if (txo['slpUtxoJudgement'] == "SLP_BATON") {
