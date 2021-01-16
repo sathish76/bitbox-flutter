@@ -151,8 +151,16 @@ class SLP {
     if (sendChange) {
       tokenReceiverAddresses.add(slpChangeReceiverAddress);
     }
+
+    int tokenType = tokenInfo['tokenType'];
+
     // 3 Create the Send OP_RETURN message
-    var sendOpReturn = Send(HEX.decode(tokenId), amounts);
+    var sendOpReturn;
+    if (tokenType == 1) {
+      sendOpReturn = Send(HEX.decode(tokenId), amounts);
+    } else {
+      sendOpReturn = Nft1ChildSend(HEX.decode(tokenId), amounts[0]);
+    }
     // 4 Create the raw Send transaction hex
     Map result = await _buildRawSendTx(
         slpSendOpReturn: sendOpReturn,
@@ -183,10 +191,10 @@ class SLP {
     //if (txo.containsKey('slpTransactionDetails')) {
     //if (txo['slpUtxoJudgement'] == "SLP_TOKEN") {
     if (txo['utxoType'] == "token") {
-      if (txo['transactionType'] != 'send') {
-        throw Exception(
-            "There is at least one input UTXO that does not have a proper SLP judgement");
-      }
+      //if (txo['transactionType'] != 'send') {
+      // throw Exception(
+      //     "There is at least one input UTXO that does not have a proper SLP judgement");
+      // }
       //if (!txo.containsKey('slpUtxoJudgementAmount')) {
       if (!txo.containsKey('tokenQty')) {
         throw Exception(
