@@ -245,6 +245,9 @@ class SLP {
     var tokenInputQty = new BigInt.from(0);
     inputTokenUtxos.forEach((txo) {
       //if (txo['slpUtxoJudgement'] == "NOT_SLP") {
+      if (txo['isValid'] == null) {
+        return;
+      }
       if (!txo['isValid']) {
         return;
       }
