@@ -158,8 +158,12 @@ class SLP {
     var sendOpReturn;
     if (tokenType == 1) {
       sendOpReturn = Send(HEX.decode(tokenId), amounts);
-    } else {
+    } else if (tokenType == 129) {
+      sendOpReturn = Nft1GroupSend(HEX.decode(tokenId), amounts);
+    } else if (tokenType == 65) {
       sendOpReturn = Nft1ChildSend(HEX.decode(tokenId), amounts[0]);
+    } else {
+      return throw Exception('Invalid token type');
     }
     // 4 Create the raw Send transaction hex
     Map result = await _buildRawSendTx(
