@@ -93,6 +93,11 @@ class SLP {
     return utxo;
   }
 
+  static parseSlp(String scriptPubKey) {
+    var slpMsg = parseSLP(HEX.decode(scriptPubKey));
+    return slpMsg.toMap(raw: true);
+  }
+
   static simpleTokenSend(
       {String tokenId,
       List<num> sendAmounts,
@@ -167,13 +172,14 @@ class SLP {
     }
     // 4 Create the raw Send transaction hex
     Map result = await _buildRawSendTx(
-        slpSendOpReturn: sendOpReturn,
-        inputTokenUtxos: inputUtxos,
-        bchInputUtxos: bchInputUtxos,
-        tokenReceiverAddresses: tokenReceiverAddresses,
-        bchChangeReceiverAddress: bchChangeReceiverAddress,
-        requiredNonTokenOutputs: requiredNonTokenOutputs,
-        extraFee: extraFee);
+      slpSendOpReturn: sendOpReturn,
+      inputTokenUtxos: inputUtxos,
+      bchInputUtxos: bchInputUtxos,
+      tokenReceiverAddresses: tokenReceiverAddresses,
+      bchChangeReceiverAddress: bchChangeReceiverAddress,
+      requiredNonTokenOutputs: requiredNonTokenOutputs,
+      extraFee: extraFee,
+    );
     return result;
   }
 
