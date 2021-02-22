@@ -351,7 +351,7 @@ class SLP {
         inputTokenUtxos.length + bchInputUtxos.length,
         tokenReceiverAddresses.length + bchOnlyCount,
         bchChangeAddress: bchChangeReceiverAddress,
-        feeRate: extraFee != null ? extraFee : 1);
+        feeRate: extraFee ?? 1);
 
     // Compute BCH change amount
     BigInt bchChangeAfterFeeSatoshis =
@@ -410,7 +410,9 @@ class SLP {
     if (inValue - outValue < hex.length / 2) {
       return {'hex': null, 'fee': "Insufficient fee"};
     }
-    return {'hex': hex, 'fee': sendCost};
+
+    int _extraFee = (tokenReceiverAddresses.length + bchOnlyCount) * 546;
+    return {'hex': hex, 'fee': sendCost - _extraFee};
   }
 
   static int _calculateSendCost(
