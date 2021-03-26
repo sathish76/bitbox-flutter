@@ -21,8 +21,8 @@ dependencies:
       ref: master
   bip32:
     git:
-      url: https://github.com/jbdtky/bip32-dart
-      ref: master
+      url: https://github.com/DevanshiGarg08/bip32-dart
+      ref: staging
   hex: ^0.2.0
   fixnum: ^1.0.0
   meta: ^1.3.0
