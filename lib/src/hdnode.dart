@@ -4,7 +4,7 @@ import 'dart:typed_data';
 import 'crypto/ecurve.dart';
 import 'address.dart';
 import 'package:hex/hex.dart';
-import 'package:bs58check/bs58check.dart' as bs58check;
+import 'package:bs58check_dart/bs58check.dart' as bs58check;
 
 import 'crypto/crypto.dart';
 import 'ecpair.dart';

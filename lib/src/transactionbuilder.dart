@@ -1,6 +1,6 @@
 import 'dart:typed_data';
 import 'package:hex/hex.dart';
-import 'package:bs58check/bs58check.dart' as bs58check;
+import 'package:bs58check_dart/bs58check.dart' as bs58check;
 import 'address.dart';
 import 'crypto/crypto.dart';
 import 'utils/network.dart';
