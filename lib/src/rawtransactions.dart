@@ -37,8 +37,8 @@ class RawTransactions {
   static Future getRawtransaction(String script,
       {bool verbose = true, bool testnet = false}) async {
     var _restURL = testnet ? 'trest' : 'rest';
-    final response = await http.get(
-        "https://$_restURL.bitcoin.com/v2/rawtransactions/getRawTransaction/$script?verbose=$verbose");
+    final response = await http.get(Uri.parse(
+        "https://$_restURL.bitcoin.com/v2/rawtransactions/getRawTransaction/$script?verbose=$verbose"));
     return jsonDecode(response.body);
   }
 
@@ -47,7 +47,8 @@ class RawTransactions {
       {bool verbose = true, bool testnet = false}) async {
     var _restURL = testnet ? 'trest' : 'rest';
     final response = await http.post(
-        "https://$_restURL.bitcoin.com/v2/rawtransactions/getRawTransaction",
+        Uri.parse(
+            "https://$_restURL.bitcoin.com/v2/rawtransactions/getRawTransaction"),
         headers: {"content-type": "application/json"},
         body: jsonEncode({'txids': scripts, "verbose": verbose}));
     return jsonDecode(response.body);

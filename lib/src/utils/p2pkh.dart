@@ -3,7 +3,7 @@ import '../crypto/crypto.dart';
 import '../utils/opcodes.dart';
 import 'package:meta/meta.dart';
 import 'package:bip32/src/utils/ecurve.dart' show isPoint;
-import 'package:bs58check/bs58check.dart' as bs58check;
+import 'package:bs58check_dart/bs58check.dart' as bs58check;
 import 'script.dart' as bscript;
 
 import 'network.dart';
