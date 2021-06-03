@@ -108,7 +108,8 @@ class SLP {
       String bchChangeReceiverAddress,
       List requiredNonTokenOutputs,
       int extraFee,
-      int type = 0x01}) async {
+      int type = 0x01,
+      bool buildIncomplete = false}) async {
     List<BigInt> amounts = [];
     BigInt totalAmount = BigInt.from(0);
     if (tokenId is! String) {
@@ -179,6 +180,7 @@ class SLP {
       bchChangeReceiverAddress: bchChangeReceiverAddress,
       requiredNonTokenOutputs: requiredNonTokenOutputs,
       extraFee: extraFee,
+      buildIncomplete: buildIncomplete,
     );
     return result;
   }
@@ -232,7 +234,8 @@ class SLP {
       List tokenReceiverAddresses,
       String bchChangeReceiverAddress,
       List requiredNonTokenOutputs,
-      int extraFee}) async {
+      int extraFee,
+      bool buildIncomplete}) async {
     // Check proper address formats are given
     tokenReceiverAddresses.forEach((addr) {
       if (!addr.startsWith('simpleledger:')) {
@@ -399,7 +402,12 @@ class SLP {
 
     // Build the transaction to hex and return
     // warn user if the transaction was not fully signed
-    String hex = transactionBuilder.build().toHex();
+    String hex;
+    if (buildIncomplete) {
+      hex = transactionBuilder.buildIncomplete().toHex();
+    } else {
+      hex = transactionBuilder.build().toHex();
+    }
 
     // Check For Low Fee
     int outValue = 0;
