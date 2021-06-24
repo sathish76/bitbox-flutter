@@ -98,18 +98,20 @@ class SLP {
     return slpMsg.toMap(raw: true);
   }
 
-  static simpleTokenSend(
-      {String tokenId,
-      List<num> sendAmounts,
-      List inputUtxos,
-      List bchInputUtxos,
-      List<String> tokenReceiverAddresses,
-      String slpChangeReceiverAddress,
-      String bchChangeReceiverAddress,
-      List requiredNonTokenOutputs,
-      int extraFee,
-      int type = 0x01,
-      bool buildIncomplete = false}) async {
+  static simpleTokenSend({
+    String tokenId,
+    List<num> sendAmounts,
+    List inputUtxos,
+    List bchInputUtxos,
+    List<String> tokenReceiverAddresses,
+    String slpChangeReceiverAddress,
+    String bchChangeReceiverAddress,
+    List requiredNonTokenOutputs,
+    int extraFee,
+    int type = 0x01,
+    bool buildIncomplete = false,
+    bool anyoneCanPay = false,
+  }) async {
     List<BigInt> amounts = [];
     BigInt totalAmount = BigInt.from(0);
     if (tokenId is! String) {
@@ -173,15 +175,15 @@ class SLP {
     }
     // 4 Create the raw Send transaction hex
     Map result = await _buildRawSendTx(
-      slpSendOpReturn: sendOpReturn,
-      inputTokenUtxos: inputUtxos,
-      bchInputUtxos: bchInputUtxos,
-      tokenReceiverAddresses: tokenReceiverAddresses,
-      bchChangeReceiverAddress: bchChangeReceiverAddress,
-      requiredNonTokenOutputs: requiredNonTokenOutputs,
-      extraFee: extraFee,
-      buildIncomplete: buildIncomplete,
-    );
+        slpSendOpReturn: sendOpReturn,
+        inputTokenUtxos: inputUtxos,
+        bchInputUtxos: bchInputUtxos,
+        tokenReceiverAddresses: tokenReceiverAddresses,
+        bchChangeReceiverAddress: bchChangeReceiverAddress,
+        requiredNonTokenOutputs: requiredNonTokenOutputs,
+        extraFee: extraFee,
+        buildIncomplete: buildIncomplete,
+        anyoneCanPay: anyoneCanPay);
     return result;
   }
 
@@ -235,7 +237,8 @@ class SLP {
       String bchChangeReceiverAddress,
       List requiredNonTokenOutputs,
       int extraFee,
-      bool buildIncomplete}) async {
+      bool buildIncomplete,
+      bool anyoneCanPay}) async {
     // Check proper address formats are given
     tokenReceiverAddresses.forEach((addr) {
       if (!addr.startsWith('simpleledger:')) {
@@ -380,8 +383,14 @@ class SLP {
       } else {
         paymentKeyPair = ECPair.fromWIF(wif);
       }
-      transactionBuilder.sign(slpIndex, paymentKeyPair, i['satoshis'].toInt(),
-          Transaction.SIGHASH_ALL);
+
+      transactionBuilder.sign(
+          slpIndex,
+          paymentKeyPair,
+          i['satoshis'].toInt(),
+          anyoneCanPay
+              ? Transaction.SIGHASH_ANYONECANPAY
+              : Transaction.SIGHASH_ALL);
       slpIndex++;
     });
 
@@ -395,8 +404,13 @@ class SLP {
       } else {
         paymentKeyPair = ECPair.fromWIF(wif);
       }
-      transactionBuilder.sign(bchIndex, paymentKeyPair, i['satoshis'].toInt(),
-          Transaction.SIGHASH_ALL);
+      transactionBuilder.sign(
+          bchIndex,
+          paymentKeyPair,
+          i['satoshis'].toInt(),
+          anyoneCanPay
+              ? Transaction.SIGHASH_ANYONECANPAY
+              : Transaction.SIGHASH_ALL);
       bchIndex++;
     });
 
