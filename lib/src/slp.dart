@@ -108,6 +108,7 @@ class SLP {
     String bchChangeReceiverAddress,
     List requiredNonTokenOutputs,
     int extraFee,
+    int extraBCH = 0,
     int type = 0x01,
     bool buildIncomplete = false,
     int hashType = Transaction.SIGHASH_ALL,
@@ -182,6 +183,7 @@ class SLP {
         bchChangeReceiverAddress: bchChangeReceiverAddress,
         requiredNonTokenOutputs: requiredNonTokenOutputs,
         extraFee: extraFee,
+        extraBCH: extraBCH,
         buildIncomplete: buildIncomplete,
         hashType: hashType);
     return result;
@@ -236,6 +238,7 @@ class SLP {
       List tokenReceiverAddresses,
       String bchChangeReceiverAddress,
       List requiredNonTokenOutputs,
+      int extraBCH,
       int extraFee,
       bool buildIncomplete,
       int hashType}) async {
@@ -367,9 +370,9 @@ class SLP {
     }
 
     // Add change, if any
-    if (bchChangeAfterFeeSatoshis > new BigInt.from(546)) {
+    if (bchChangeAfterFeeSatoshis + new BigInt.from(extraBCH) > new BigInt.from(546)) {
       transactionBuilder.addOutput(
-          bchChangeReceiverAddress, bchChangeAfterFeeSatoshis.toInt());
+          bchChangeReceiverAddress, bchChangeAfterFeeSatoshis.toInt() + extraBCH);
     }
 
     if (hashType == null) hashType = Transaction.SIGHASH_ALL;
@@ -405,11 +408,14 @@ class SLP {
       bchIndex++;
     });
 
+     int _extraFee = (tokenReceiverAddresses.length + bchOnlyCount) * 546;
+
     // Build the transaction to hex and return
     // warn user if the transaction was not fully signed
     String hex;
     if (buildIncomplete) {
       hex = transactionBuilder.buildIncomplete().toHex();
+      return {'hex': hex, 'fee': sendCost - _extraFee};
     } else {
       hex = transactionBuilder.build().toHex();
     }
@@ -424,7 +430,6 @@ class SLP {
       return {'hex': null, 'fee': "Insufficient fee"};
     }
 
-    int _extraFee = (tokenReceiverAddresses.length + bchOnlyCount) * 546;
     return {'hex': hex, 'fee': sendCost - _extraFee};
   }
 
