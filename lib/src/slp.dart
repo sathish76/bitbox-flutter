@@ -110,7 +110,7 @@ class SLP {
     int extraFee,
     int type = 0x01,
     bool buildIncomplete = false,
-    bool anyoneCanPay = false,
+    int hashType = Transaction.SIGHASH_ALL,
   }) async {
     List<BigInt> amounts = [];
     BigInt totalAmount = BigInt.from(0);
@@ -183,7 +183,7 @@ class SLP {
         requiredNonTokenOutputs: requiredNonTokenOutputs,
         extraFee: extraFee,
         buildIncomplete: buildIncomplete,
-        anyoneCanPay: anyoneCanPay);
+        hashType: hashType);
     return result;
   }
 
@@ -238,7 +238,7 @@ class SLP {
       List requiredNonTokenOutputs,
       int extraFee,
       bool buildIncomplete,
-      bool anyoneCanPay}) async {
+      int hashType}) async {
     // Check proper address formats are given
     tokenReceiverAddresses.forEach((addr) {
       if (!addr.startsWith('simpleledger:')) {
@@ -372,6 +372,7 @@ class SLP {
           bchChangeReceiverAddress, bchChangeAfterFeeSatoshis.toInt());
     }
 
+    if (hashType == null) hashType = Transaction.SIGHASH_ALL;
     // Sign txn and add sig to p2pkh input with xpriv,
     int slpIndex = 0;
     inputTokenUtxos.forEach((i) {
@@ -385,12 +386,7 @@ class SLP {
       }
 
       transactionBuilder.sign(
-          slpIndex,
-          paymentKeyPair,
-          i['satoshis'].toInt(),
-          anyoneCanPay
-              ? Transaction.SIGHASH_ANYONECANPAY
-              : Transaction.SIGHASH_ALL);
+          slpIndex, paymentKeyPair, i['satoshis'].toInt(), hashType);
       slpIndex++;
     });
 
@@ -405,12 +401,7 @@ class SLP {
         paymentKeyPair = ECPair.fromWIF(wif);
       }
       transactionBuilder.sign(
-          bchIndex,
-          paymentKeyPair,
-          i['satoshis'].toInt(),
-          anyoneCanPay
-              ? Transaction.SIGHASH_ANYONECANPAY
-              : Transaction.SIGHASH_ALL);
+          bchIndex, paymentKeyPair, i['satoshis'].toInt(), hashType);
       bchIndex++;
     });
 
