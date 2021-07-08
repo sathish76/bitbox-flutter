@@ -230,8 +230,6 @@ class Transaction {
       tOffset += slice.length;
     }
 
-    ;
-
     void writeUint32(int i) {
       tBuffer.buffer.asByteData().setUint32(tOffset, i, Endian.little);
       tOffset += 4;
@@ -252,9 +250,9 @@ class Transaction {
       writeSlice(slice);
     }
 
-    Uint8List hashPrevoutputs;
-    Uint8List hashSequence;
-    Uint8List hashOutputs;
+    Uint8List hashPrevoutputs = zero;
+    Uint8List hashSequence = zero;
+    Uint8List hashOutputs = zero;
 
     if ((hashType & SIGHASH_ANYONECANPAY == 0)) {
       tBuffer = Uint8List(36 * this.inputs.length);
