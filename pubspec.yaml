@@ -28,7 +28,10 @@ dependencies:
   meta: ^1.3.0
   buffer: ^1.1.0
   slp_parser: ^0.0.3
-  slp_mdm: ^0.1.0
+  slp_mdm:
+    git:
+      url: https://github.com/zapit-io/slp-metadatamaker.dart.git
+      ref: master
 
 dependency_overrides:
   crypto: ^3.0.0
