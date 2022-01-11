@@ -1,3 +1,8 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
+import 'package:bitbox/src/utils/magic_hash.dart';
+
 import 'utils/bip21.dart';
 
 /// Bitcoin Cash specific utilities
@@ -25,5 +30,11 @@ class BitcoinCash {
   // Converts [String] bip-21 uri into a [Map] of bch address and its options
   static Map<String, dynamic> decodeBIP21(String uri) {
     return Bip21.decode(uri);
+  }
+
+  // Sign a string message with privateKey in Bitcoin Signature format
+  static String signMessage(String message) {
+    Uint8List signatureBuffer = magicHash(message);
+    return utf8.decode(signatureBuffer);
   }
 }
