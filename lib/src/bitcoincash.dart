@@ -33,7 +33,7 @@ class BitcoinCash {
   }
 
   // Sign a string message with privateKey in Bitcoin Signature format
-  static String signMessage(String message, [returnString = false]) {
+  static Uint8List signMessage(String message, [returnString = false]) {
     Uint8List signatureBuffer = magicHash(message);
     //return utf8.decode(signatureBuffer);
     return signatureBuffer
