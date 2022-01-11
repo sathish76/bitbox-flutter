@@ -36,6 +36,6 @@ class BitcoinCash {
   static Uint8List signMessage(String message, [returnString = false]) {
     Uint8List signatureBuffer = magicHash(message);
     //return utf8.decode(signatureBuffer);
-    return signatureBuffer
+    return signatureBuffer;
   }
 }
