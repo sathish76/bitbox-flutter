@@ -14,12 +14,12 @@ dependencies:
   bip39:
     git:
       url: https://github.com/RomitRadical/bip39.git
-      ref: staging
+      ref: master
   pointycastle: ^3.5.0
   bip32:
     git:
       url: https://github.com/zapit-io/bip32-dart.git
-      ref: staging
+      ref: master
   hex: ^0.2.0
   fixnum: ^1.0.0
   meta: ^1.3.0

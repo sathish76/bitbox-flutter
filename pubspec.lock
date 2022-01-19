@@ -12,18 +12,18 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: staging
-      resolved-ref: "8fd271153e687304a260a3b65bd96ba0bd272d8f"
-      url: "https://github.com/DevanshiGarg08/bip32-dart"
+      ref: master
+      resolved-ref: "96e8eec4d674a3f3b88e3d2f7d8cb80ed89c800d"
+      url: "https://github.com/zapit-io/bip32-dart.git"
     source: git
-    version: "1.0.5"
+    version: "2.0.0"
   bip39:
     dependency: "direct main"
     description:
       path: "."
-      ref: staging
-      resolved-ref: "8f1a58c13c3f4c1497834a99e13ba28cd670be95"
-      url: "https://github.com/DevanshiGarg08/bip39"
+      ref: master
+      resolved-ref: "91c63bf997167bb947ee1d5d45df3bf0e8ad88b8"
+      url: "https://github.com/RomitRadical/bip39.git"
     source: git
     version: "1.0.3"
   boolean_selector:
@@ -33,6 +33,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "2.1.0"
+  bs58check:
+    dependency: transitive
+    description:
+      name: bs58check
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "1.0.2"
   bs58check_dart:
     dependency: "direct overridden"
     description:
@@ -134,6 +141,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "4.0.0"
+  js:
+    dependency: transitive
+    description:
+      name: js
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.6.3"
   matcher:
     dependency: transitive
     description:
@@ -165,12 +179,10 @@ packages:
   pointycastle:
     dependency: "direct main"
     description:
-      path: "."
-      ref: master
-      resolved-ref: "276ca77d6d7a3f93d0cfad019bb69da2b9a6324b"
-      url: "https://github.com/jbdtky/pc-dart.git"
-    source: git
-    version: "1.0.2"
+      name: pointycastle
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "3.5.0"
   sky_engine:
     dependency: transitive
     description: flutter
