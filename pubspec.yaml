@@ -15,10 +15,7 @@ dependencies:
     git:
       url: https://github.com/DevanshiGarg08/bip39
       ref: staging
-  pointycastle:
-    git:
-      url: https://github.com/jbdtky/pc-dart.git
-      ref: master
+  pointycastle: ^3.5.0
   bip32:
     git:
       url: https://github.com/DevanshiGarg08/bip32-dart
