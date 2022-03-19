@@ -20,4 +20,8 @@ class Crypto {
     Uint8List _tmp = new SHA256Digest().process(buffer);
     return new SHA256Digest().process(_tmp);
   }
+
+  static Uint8List sha256(Uint8List buffer) {
+    return new SHA256Digest().process(buffer);
+  }
 }
