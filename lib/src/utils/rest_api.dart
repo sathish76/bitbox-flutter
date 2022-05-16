@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class RestApi {
-  static String _restUrl = "https://rest.bitcoin.com/v2/";
+  static String _restUrl = "https://rest1.biggestfan.net/v2";
 
   static set restUrl(String restUrl) {
     _restUrl = restUrl;

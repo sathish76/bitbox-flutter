@@ -34,23 +34,21 @@ class RawTransactions {
           "rawtransactions/decodeScript", "hexes", scripts);
 
   /// Returns the raw transaction data
-  static Future getRawtransaction(String script,
+  static Future getRawtransaction(String txid,
       {bool verbose = true, bool testnet = false}) async {
-    var _restURL = testnet ? 'trest' : 'rest';
     final response = await http.get(Uri.parse(
-        "https://$_restURL.bitcoin.com/v2/rawtransactions/getRawTransaction/$script?verbose=$verbose"));
+        "https://api.fullstack.cash/v5/rawtransactions/getRawTransaction/$txid"));
     return jsonDecode(response.body);
   }
 
   /// Returns raw transaction data for multiple transactions
-  static Future getRawtransactions(List<String> scripts,
+  static Future getRawtransactions(List<String> txids,
       {bool verbose = true, bool testnet = false}) async {
-    var _restURL = testnet ? 'trest' : 'rest';
     final response = await http.post(
         Uri.parse(
-            "https://$_restURL.bitcoin.com/v2/rawtransactions/getRawTransaction"),
+            "https://api.fullstack.cash/v5/rawtransactions/getRawTransaction"),
         headers: {"content-type": "application/json"},
-        body: jsonEncode({'txids': scripts, "verbose": verbose}));
+        body: jsonEncode({'txids': txids, "verbose": verbose}));
     return jsonDecode(response.body);
   }
 }
