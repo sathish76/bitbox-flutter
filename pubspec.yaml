@@ -15,7 +15,7 @@ dependencies:
     git:
       url: https://github.com/zapit-io/bip39.git
       ref: master
-  pointycastle: ^3.5.0
+  pointycastle: ^3.6.0
   bip32:
     git:
       url: https://github.com/zapit-io/bip32-dart.git
@@ -37,6 +37,7 @@ dependency_overrides:
   crypto: ^3.0.0
   hex: ^0.2.0
   bs58check_dart: ^2.0.0+1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

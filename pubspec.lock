@@ -13,7 +13,7 @@ packages:
     description:
       path: "."
       ref: master
-      resolved-ref: "96e8eec4d674a3f3b88e3d2f7d8cb80ed89c800d"
+      resolved-ref: f9d9532be91a0031630f3be1dbb2b5ae3bf014c6
       url: "https://github.com/zapit-io/bip32-dart.git"
     source: git
     version: "2.0.0"
@@ -189,7 +189,7 @@ packages:
       name: pointycastle
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "3.5.0"
+    version: "3.6.0"
   sky_engine:
     dependency: transitive
     description: flutter
