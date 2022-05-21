@@ -34,19 +34,18 @@ class RawTransactions {
           "rawtransactions/decodeScript", "hexes", scripts);
 
   /// Returns the raw transaction data
-  static Future getRawtransaction(String txid,
-      {bool verbose = true, bool testnet = false}) async {
+  static Future getRawtransaction(String txid, {bool verbose = true}) async {
     final response = await http.get(Uri.parse(
-        "https://api.fullstack.cash/v5/rawtransactions/getRawTransaction/$txid"));
+        "https://rest1.biggestfan.net/v2/rawtransactions/getRawTransaction/$txid?verbose=$verbose"));
     return jsonDecode(response.body);
   }
 
   /// Returns raw transaction data for multiple transactions
   static Future getRawtransactions(List<String> txids,
-      {bool verbose = true, bool testnet = false}) async {
+      {bool verbose = true}) async {
     final response = await http.post(
         Uri.parse(
-            "https://api.fullstack.cash/v5/rawtransactions/getRawTransaction"),
+            "https://rest1.biggestfan.net/v2/rawtransactions/getRawTransaction"),
         headers: {"content-type": "application/json"},
         body: jsonEncode({'txids': txids, "verbose": verbose}));
     return jsonDecode(response.body);
