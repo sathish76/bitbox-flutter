@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:bitbox/bitbox.dart';
 import 'package:bitbox/src/utils/magic_hash.dart';
 
 import 'utils/bip21.dart';
@@ -37,5 +38,9 @@ class BitcoinCash {
     Uint8List signatureBuffer = magicHash(message);
     //return utf8.decode(signatureBuffer);
     return signatureBuffer;
+  }
+
+  static Uint8List getOpReturnScript(String data) {
+    return compile([Opcodes.OP_RETURN, utf8.encode(data)]);
   }
 }
