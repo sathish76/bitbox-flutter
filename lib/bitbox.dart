@@ -8,6 +8,7 @@ export 'src/block.dart';
 export 'src/blockchain.dart';
 export 'src/cashaccounts.dart';
 export 'src/crypto/crypto.dart';
+export 'src/crypto/ecies.dart';
 export 'src/ecpair.dart';
 export 'src/hdnode.dart';
 export 'src/mnemonic.dart';
