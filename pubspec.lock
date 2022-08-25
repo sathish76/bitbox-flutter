@@ -34,19 +34,12 @@ packages:
     source: hosted
     version: "2.1.0"
   bs58check:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: bs58check
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.0.2"
-  bs58check_dart:
-    dependency: "direct overridden"
-    description:
-      name: bs58check_dart
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "2.0.0+1"
   buffer:
     dependency: "direct main"
     description:
@@ -88,7 +81,7 @@ packages:
       name: convert
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "3.0.1"
+    version: "3.0.2"
   crypto:
     dependency: "direct overridden"
     description:
@@ -133,7 +126,7 @@ packages:
       name: http
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.13.4"
+    version: "0.13.5"
   http_parser:
     dependency: transitive
     description:
@@ -182,7 +175,7 @@ packages:
       name: pointycastle
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "3.6.0"
+    version: "3.6.1"
   sky_engine:
     dependency: transitive
     description: flutter

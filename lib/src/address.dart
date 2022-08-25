@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'utils/rest_api.dart';
 
-import 'package:bs58check_dart/bs58check.dart' as bs58check;
+import 'package:bs58check/bs58check.dart' as bs58check;
 import 'utils/network.dart';
 import 'package:fixnum/fixnum.dart';
 
