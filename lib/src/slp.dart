@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 import 'package:bitbox/bitbox.dart';
 import 'package:hex/hex.dart';
@@ -424,8 +425,8 @@ class SLP {
     int outValue = 0;
     transactionBuilder.tx.outputs.forEach((o) => outValue += o.value!);
     int inValue = 0;
-    inputTokenUtxos.forEach((i) => inValue += i['satoshis'].toInt());
-    bchInputUtxos.forEach((i) => inValue += i['satoshis']);
+    inputTokenUtxos.forEach((i) => inValue = inValue + (i['satoshis'] as num).toInt());
+    bchInputUtxos.forEach((i) => inValue = inValue + (i['satoshis'] as num).toInt());
     if (inValue - outValue < hex.length / 2) {
       return {'hex': null, 'fee': "Insufficient fee"};
     }
@@ -470,7 +471,7 @@ class SLP {
       String? bchChangeReceiverAddress,
       List? inputUtxos,
       int type = 0x01}) async {
-    int batonVout = batonReceiverAddress.isNotEmpty ? 2 : null;
+    int batonVout = batonReceiverAddress.isNotEmpty ? 2 : 0;
     if (decimals == null) {
       throw Exception("Decimals property must be in range 0 to 9");
     }

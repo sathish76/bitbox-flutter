@@ -172,7 +172,7 @@ BigInt readVarInt(Uint8List buffer) {
   }
 }
 
-int getBufferOffset(int count) {
+int? getBufferOffset(int count) {
   if (count < 0xFD) return 1;
 
   if (count == 0xFD) return 3; //2 bytes ==  Uint16

@@ -20,9 +20,15 @@ class Account {
   /// moves the position forward and returns an address from the new position
   String? getNextAddress([legacyFormat = true]) {
     if (legacyFormat) {
-      return accountNode.derive(++currentChild).toLegacyAddress();
+      if (currentChild != null) {
+        currentChild = currentChild! + 1;
+        return accountNode.derive(currentChild!).toLegacyAddress();
+      }
     } else {
-      return accountNode.derive(++currentChild).toCashAddress();
+      if (currentChild != null) {
+        currentChild = currentChild! + 1;
+        return accountNode.derive(currentChild!).toCashAddress();
+      }
     }
   }
 }

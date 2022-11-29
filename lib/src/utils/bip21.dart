@@ -54,7 +54,7 @@ class Bip21 {
         uriOptions[key] = value.toString();
       });
 
-      if (uriOptions.isEmpty) uriOptions = null;
+      if (uriOptions.isEmpty) uriOptions = {};
       query = Uri(queryParameters: uriOptions).toString();
       // Dart isn't following RFC-3986...
       query = query.replaceAll(RegExp(r"\+"), "%20");

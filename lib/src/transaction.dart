@@ -52,8 +52,8 @@ class Transaction {
     var offset = 0;
     ByteData bytes = buffer.buffer.asByteData();
     Uint8List readSlice(n) {
-      offset += n;
-      return buffer.sublist(offset - n as int, offset);
+      offset += n as int;
+      return buffer.sublist(offset - n, offset);
     }
 
     int readUInt32() {
@@ -227,22 +227,22 @@ class Transaction {
 
     void writeSlice(Uint8List slice) {
       tBuffer!.setRange(tOffset!, slice.length + tOffset!, slice);
-      tOffset += slice.length;
+      tOffset = tOffset! + slice.length;
     }
 
     void writeUint32(int i) {
       tBuffer!.buffer.asByteData().setUint32(tOffset!, i, Endian.little);
-      tOffset += 4;
+      tOffset = tOffset! + 4;
     }
 
     void writeUint64(int i) {
       tBuffer!.buffer.asByteData().setUint64(tOffset!, i, Endian.little);
-      tOffset += 8;
+      tOffset = tOffset! + 8;
     }
 
     void writeVarInt(int i) {
       varuint.encode(i, tBuffer, tOffset);
-      tOffset += varuint.encodingLength(i);
+      tOffset = tOffset! + varuint.encodingLength(i);
     }
 
     writeVarSlice(slice) {
