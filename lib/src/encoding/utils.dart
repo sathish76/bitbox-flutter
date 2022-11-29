@@ -9,8 +9,8 @@ import 'dart:math';
 //import 'package:pointycastle/src/utils.dart';
 import 'package:pointycastle/export.dart';
 
-List<int> sha256Twice(List<int> bytes) {
-  var first = new SHA256Digest().process(Uint8List.fromList(bytes));
+List<int> sha256Twice(List<int?> bytes) {
+  var first = new SHA256Digest().process(Uint8List.fromList(bytes as List<int>));
   var second = new SHA256Digest().process(first);
   return second.toList();
 }
@@ -25,7 +25,7 @@ List<int> sha1(List<int> bytes) {
 
 List<int> hash160(List<int> bytes) {
   List<int> shaHash = new SHA256Digest().process(Uint8List.fromList(bytes));
-  var ripeHash = new RIPEMD160Digest().process(shaHash);
+  var ripeHash = new RIPEMD160Digest().process(shaHash as Uint8List);
   return ripeHash.toList();
 }
 

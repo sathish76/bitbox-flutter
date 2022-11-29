@@ -9,17 +9,17 @@ import 'utils/network.dart';
 
 /// Stores a keypair and provides various methods and factories for creating it and working with it
 class ECPair {
-  final Uint8List _d;
-  final Uint8List _q;
+  final Uint8List? _d;
+  final Uint8List? _q;
   final Network network;
-  final bool compressed;
+  final bool? compressed;
 
   /// Default constructor. If [network] is not provided, it will assume Bitcoin Cash mainnet
   ECPair(this._d, this._q, {network, this.compressed = true})
       : this.network = network ?? Network.bitcoinCash();
 
   /// Creates a keypair from the private key provided in WIF format
-  factory ECPair.fromWIF(String wifPrivateKey, {Network network}) {
+  factory ECPair.fromWIF(String wifPrivateKey, {Network? network}) {
     wif.WIF decoded = wif.decode(wifPrivateKey);
     final version = decoded.version;
     // TODO support multi networks
@@ -42,7 +42,7 @@ class ECPair {
 
   /// Creates a keypair from [publicKey. The returned keypair will contain [null] private key
   factory ECPair.fromPublicKey(Uint8List publicKey,
-      {Network network, bool compressed}) {
+      {Network? network, bool? compressed}) {
     if (!ecc.isPoint(publicKey)) {
       throw ArgumentError("Point is not on the curve");
     }
@@ -51,7 +51,7 @@ class ECPair {
 
   /// Creates a keypair from [privateKey]
   factory ECPair.fromPrivateKey(Uint8List privateKey,
-      {Network network, bool compressed}) {
+      {Network? network, bool? compressed}) {
     if (privateKey.length != 32)
       throw ArgumentError(
           "Expected property privateKey of type Buffer(Length: 32)");
@@ -61,24 +61,24 @@ class ECPair {
   }
 
   /// Creates a random keypair
-  factory ECPair.makeRandom({Network network, bool compressed, Function rng}) {
+  factory ECPair.makeRandom({Network? network, bool? compressed, Function? rng}) {
     final rfunc = rng ?? _randomBytes;
-    Uint8List d;
+    Uint8List? d;
 //    int beginTime = DateTime.now().millisecondsSinceEpoch;
     do {
       d = rfunc(32);
-      if (d.length != 32) throw ArgumentError("Expected Buffer(Length: 32)");
+      if (d!.length != 32) throw ArgumentError("Expected Buffer(Length: 32)");
 //      if (DateTime.now().millisecondsSinceEpoch - beginTime > 5000) throw ArgumentError("Timeout");
     } while (!ecc.isPrivate(d));
     return ECPair.fromPrivateKey(d, network: network, compressed: compressed);
   }
 
-  Uint8List get publicKey => _q ?? ecc.pointFromScalar(_d, compressed);
+  Uint8List? get publicKey => _q ?? ecc.pointFromScalar(_d!, compressed!);
 
-  Uint8List get privateKey => _d;
+  Uint8List? get privateKey => _d;
 
   String get address =>
-      Address.toBase58Check(Crypto.hash160(publicKey), network.pubKeyHash);
+      Address.toBase58Check(Crypto.hash160(publicKey!), network.pubKeyHash);
 
   /// Returns the private key in WIF format
   String toWIF() {
@@ -87,18 +87,18 @@ class ECPair {
     }
     return wif.encode(wif.WIF(
         version: network.private,
-        privateKey: privateKey,
-        compressed: compressed));
+        privateKey: privateKey!,
+        compressed: compressed!));
   }
 
   /// Signs the provided [hash] with the private key
   Uint8List sign(Uint8List hash) {
-    return ecc.sign(hash, privateKey);
+    return ecc.sign(hash, privateKey!);
   }
 
   /// Verifies whether the provided [signature] matches the [hash] using the keypair's [publicKey]
   bool verify(Uint8List hash, Uint8List signature) {
-    return ecc.verify(hash, publicKey, signature);
+    return ecc.verify(hash, publicKey!, signature);
   }
 }
 

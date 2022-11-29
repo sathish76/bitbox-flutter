@@ -21,14 +21,14 @@ class SLP {
     var slpMsg =
         parseSLP(HEX.decode(res['vout'][0]['scriptPubKey']['hex'])).toMap();
     if (decimalConversion) {
-      Map slpMsgData = slpMsg['data'];
+      Map? slpMsgData = slpMsg['data'] as Map<dynamic, dynamic>?;
 
       if (slpMsg['transactionType'] == "GENESIS" ||
           slpMsg['transactionType'] == "MINT") {
-        slpMsgData['qty'] =
+        slpMsgData!['qty'] =
             slpMsgData['qty'] / math.pow(10, slpMsgData['decimals']);
       } else {
-        slpMsgData['amounts']
+        slpMsgData!['amounts']
             .map((o) => o / math.pow(10, slpMsgData['decimals']));
       }
     }
@@ -40,7 +40,7 @@ class SLP {
   }
 
   static getAllSlpBalancesAndUtxos(String address) async {
-    List utxos = await mapToSlpAddressUtxoResultArray(address);
+    List utxos = await (mapToSlpAddressUtxoResultArray(address) as FutureOr<List<dynamic>>);
     var txIds = [];
     utxos.forEach((i) {
       txIds.add(i['txid']);
@@ -50,7 +50,7 @@ class SLP {
     }
   }
 
-  static Future<List> mapToSlpAddressUtxoResultArray(String address) async {
+  static Future<List?> mapToSlpAddressUtxoResultArray(String address) async {
     var result;
     try {
       result = await Address.utxo([address]);
@@ -72,7 +72,7 @@ class SLP {
         }));
   }
 
-  static mapToSLPUtxoArray({List utxos, String xpriv, String wif}) {
+  static mapToSLPUtxoArray({required List utxos, String? xpriv, String? wif}) {
     List utxo = [];
     utxos.forEach((txo) => utxo.add({
           'satoshis': new BigInt.from(txo['satoshis']),
@@ -99,15 +99,15 @@ class SLP {
   }
 
   static simpleTokenSend({
-    String tokenId,
-    List<num> sendAmounts,
-    List inputUtxos,
-    List bchInputUtxos,
-    List<String> tokenReceiverAddresses,
-    String slpChangeReceiverAddress,
-    String bchChangeReceiverAddress,
-    List requiredNonTokenOutputs,
-    int extraFee,
+    String? tokenId,
+    List<num>? sendAmounts,
+    List? inputUtxos,
+    List? bchInputUtxos,
+    List<String>? tokenReceiverAddresses,
+    String? slpChangeReceiverAddress,
+    String? bchChangeReceiverAddress,
+    List? requiredNonTokenOutputs,
+    int? extraFee,
     int extraBCH = 0,
     int type = 0x01,
     bool buildIncomplete = false,
@@ -118,7 +118,7 @@ class SLP {
     if (tokenId is! String) {
       return Exception("Token id should be a String");
     }
-    tokenReceiverAddresses.forEach((tokenReceiverAddress) {
+    tokenReceiverAddresses!.forEach((tokenReceiverAddress) {
       if (tokenReceiverAddress is! String) {
         throw new Exception("Token receiving address should be a String");
       }
@@ -131,11 +131,11 @@ class SLP {
     }
 
     var tokenInfo = await getTokenInformation(tokenId);
-    int decimals = tokenInfo['data']['decimals'];
+    int? decimals = tokenInfo['data']['decimals'];
 
-    sendAmounts.forEach((sendAmount) async {
+    sendAmounts!.forEach((sendAmount) async {
       if (sendAmount > 0) {
-        totalAmount += BigInt.from(sendAmount * math.pow(10, decimals));
+        totalAmount += BigInt.from(sendAmount * math.pow(10, decimals!));
         amounts.add(BigInt.from(sendAmount * math.pow(10, decimals)));
       }
     });
@@ -143,7 +143,7 @@ class SLP {
     // 1 Set the token send amounts, send tokens to a
     // new receiver and send token change back to the sender
     BigInt totalTokenInputAmount = BigInt.from(0);
-    inputUtxos.forEach((txo) =>
+    inputUtxos!.forEach((txo) =>
         totalTokenInputAmount += _preSendSlpJudgementCheck(txo, tokenId));
 
     // 2 Compute the token Change amount.
@@ -161,7 +161,7 @@ class SLP {
       tokenReceiverAddresses.add(slpChangeReceiverAddress);
     }
 
-    int tokenType = tokenInfo['tokenType'];
+    int? tokenType = tokenInfo['tokenType'];
 
     // 3 Create the Send OP_RETURN message
     var sendOpReturn;
@@ -178,7 +178,7 @@ class SLP {
     Map result = await _buildRawSendTx(
         slpSendOpReturn: sendOpReturn,
         inputTokenUtxos: inputUtxos,
-        bchInputUtxos: bchInputUtxos,
+        bchInputUtxos: bchInputUtxos!,
         tokenReceiverAddresses: tokenReceiverAddresses,
         bchChangeReceiverAddress: bchChangeReceiverAddress,
         requiredNonTokenOutputs: requiredNonTokenOutputs,
@@ -232,16 +232,16 @@ class SLP {
   }
 
   static _buildRawSendTx(
-      {List<int> slpSendOpReturn,
-      List inputTokenUtxos,
-      List bchInputUtxos,
-      List tokenReceiverAddresses,
-      String bchChangeReceiverAddress,
-      List requiredNonTokenOutputs,
-      int extraBCH,
-      int extraFee,
-      bool buildIncomplete,
-      int hashType}) async {
+      {required List<int> slpSendOpReturn,
+      required List inputTokenUtxos,
+      required List bchInputUtxos,
+      required List tokenReceiverAddresses,
+      String? bchChangeReceiverAddress,
+      List? requiredNonTokenOutputs,
+      int? extraBCH,
+      int? extraFee,
+      bool? buildIncomplete,
+      int? hashType}) async {
     // Check proper address formats are given
     tokenReceiverAddresses.forEach((addr) {
       if (!addr.startsWith('simpleledger:')) {
@@ -258,7 +258,7 @@ class SLP {
 
     // Parse the SLP SEND OP_RETURN message
     var sendMsg = parseSLP(slpSendOpReturn).toMap();
-    Map sendMsgData = sendMsg['data'];
+    Map sendMsgData = sendMsg['data'] as Map<dynamic, dynamic>;
 
     // Make sure we're not spending inputs from any other token or baton
     var tokenInputQty = new BigInt.from(0);
@@ -370,7 +370,7 @@ class SLP {
     }
 
     // Add change, if any
-    if (bchChangeAfterFeeSatoshis + new BigInt.from(extraBCH) > new BigInt.from(546)) {
+    if (bchChangeAfterFeeSatoshis + new BigInt.from(extraBCH!) > new BigInt.from(546)) {
       transactionBuilder.addOutput(
           bchChangeReceiverAddress, bchChangeAfterFeeSatoshis.toInt() + extraBCH);
     }
@@ -380,31 +380,31 @@ class SLP {
     int slpIndex = 0;
     inputTokenUtxos.forEach((i) {
       ECPair paymentKeyPair;
-      String xpriv = i['xpriv'];
-      String wif = i['wif'];
+      String? xpriv = i['xpriv'];
+      String? wif = i['wif'];
       if (xpriv != null) {
         paymentKeyPair = HDNode.fromXPriv(xpriv).keyPair;
       } else {
-        paymentKeyPair = ECPair.fromWIF(wif);
+        paymentKeyPair = ECPair.fromWIF(wif!);
       }
 
       transactionBuilder.sign(
-          slpIndex, paymentKeyPair, i['satoshis'].toInt(), hashType);
+          slpIndex, paymentKeyPair, i['satoshis'].toInt(), hashType!);
       slpIndex++;
     });
 
     int bchIndex = inputTokenUtxos.length;
     bchInputUtxos.forEach((i) {
       ECPair paymentKeyPair;
-      String xpriv = i['xpriv'];
-      String wif = i['wif'];
+      String? xpriv = i['xpriv'];
+      String? wif = i['wif'];
       if (xpriv != null) {
         paymentKeyPair = HDNode.fromXPriv(xpriv).keyPair;
       } else {
-        paymentKeyPair = ECPair.fromWIF(wif);
+        paymentKeyPair = ECPair.fromWIF(wif!);
       }
       transactionBuilder.sign(
-          bchIndex, paymentKeyPair, i['satoshis'].toInt(), hashType);
+          bchIndex, paymentKeyPair, i['satoshis'].toInt(), hashType!);
       bchIndex++;
     });
 
@@ -413,7 +413,7 @@ class SLP {
     // Build the transaction to hex and return
     // warn user if the transaction was not fully signed
     String hex;
-    if (buildIncomplete) {
+    if (buildIncomplete!) {
       hex = transactionBuilder.buildIncomplete().toHex();
       return {'hex': hex, 'fee': sendCost - _extraFee};
     } else {
@@ -422,7 +422,7 @@ class SLP {
 
     // Check For Low Fee
     int outValue = 0;
-    transactionBuilder.tx.outputs.forEach((o) => outValue += o.value);
+    transactionBuilder.tx.outputs.forEach((o) => outValue += o.value!);
     int inValue = 0;
     inputTokenUtxos.forEach((i) => inValue += i['satoshis'].toInt());
     bchInputUtxos.forEach((i) => inValue += i['satoshis']);
@@ -435,7 +435,7 @@ class SLP {
 
   static int _calculateSendCost(
       int sendOpReturnLength, int inputUtxoSize, int outputs,
-      {String bchChangeAddress, int feeRate = 1, bool forTokens = true}) {
+      {String? bchChangeAddress, int feeRate = 1, bool forTokens = true}) {
     int nonfeeoutputs = 0;
     if (forTokens) {
       nonfeeoutputs = outputs * 546;
@@ -459,16 +459,16 @@ class SLP {
    */
 
   _createSimpleToken(
-      {String tokenName,
-      String tokenTicker,
-      int tokenAmount,
-      String documentUri,
-      Uint8List documentHash,
-      int decimals,
-      String tokenReceiverAddress,
-      String batonReceiverAddress,
-      String bchChangeReceiverAddress,
-      List inputUtxos,
+      {required String tokenName,
+      required String tokenTicker,
+      int? tokenAmount,
+      required String documentUri,
+      required Uint8List documentHash,
+      int? decimals,
+      String? tokenReceiverAddress,
+      required String batonReceiverAddress,
+      String? bchChangeReceiverAddress,
+      List? inputUtxos,
       int type = 0x01}) async {
     int batonVout = batonReceiverAddress.isNotEmpty ? 2 : null;
     if (decimals == null) {

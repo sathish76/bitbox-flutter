@@ -27,7 +27,7 @@ class Transaction {
       '0000000000000000000000000000000000000000000000000000000000000001');
   static final valueUint64Max = HEX.decode('ffffffffffffffff');
   static final blankOutput =
-      Output(script: emptyScript, valueBuffer: valueUint64Max);
+      Output(script: emptyScript, valueBuffer: valueUint64Max as Uint8List?);
   static const SATOSHI_MAX = 21 * 1e14;
 
   int version;
@@ -44,7 +44,7 @@ class Transaction {
 
   /// Creates transaction from its hex representation
   factory Transaction.fromHex(String hex) {
-    return Transaction.fromBuffer(HEX.decode(hex));
+    return Transaction.fromBuffer(HEX.decode(hex) as Uint8List);
   }
 
   /// Creates transaction from its hex representation stored in list of integers
@@ -53,7 +53,7 @@ class Transaction {
     ByteData bytes = buffer.buffer.asByteData();
     Uint8List readSlice(n) {
       offset += n;
-      return buffer.sublist(offset - n, offset);
+      return buffer.sublist(offset - n as int, offset);
     }
 
     int readUInt32() {
@@ -118,7 +118,7 @@ class Transaction {
   }
 
   /// Add input to the transaction. If [sequence] is not provided, defaults to [DEFAULT_SEQUENCE]
-  int addInput(Uint8List hash, int index, [int sequence, Uint8List scriptSig]) {
+  int addInput(Uint8List hash, int? index, [int? sequence, Uint8List? scriptSig]) {
     inputs.add(new Input(
         hash: hash,
         index: index,
@@ -128,21 +128,21 @@ class Transaction {
   }
 
   /// Add input to the transaction
-  int addOutput(Uint8List scriptPubKey, int value) {
+  int addOutput(Uint8List? scriptPubKey, int? value) {
     outputs.add(new Output(script: scriptPubKey, value: value));
     return outputs.length - 1;
   }
 
-  setInputScript(int index, Uint8List scriptSig) {
+  setInputScript(int index, Uint8List? scriptSig) {
     inputs[index].script = scriptSig;
   }
 
   /// Create hash for legacy signature
-  hashForSignature(int inIndex, Uint8List prevOutScript, int hashType) {
+  hashForSignature(int inIndex, Uint8List? prevOutScript, int hashType) {
     if (inIndex >= inputs.length) return one;
     // ignore OP_CODESEPARATOR
     final ourScript =
-        bscript.compile(bscript.decompile(prevOutScript).where((x) {
+        bscript.compile(bscript.decompile(prevOutScript!)!.where((x) {
       return x != Opcodes.OP_CODESEPARATOR;
     }).toList());
     final txTmp = Transaction.clone(this);
@@ -182,14 +182,14 @@ class Transaction {
   ///
   /// [amount] must not be null for BCH signatures
   hashForCashSignature(
-      int inIndex, Uint8List prevOutScript, int amount, int hashType) {
+      int inIndex, Uint8List? prevOutScript, int? amount, int hashType) {
     if ((hashType & SIGHASH_BITCOINCASHBIP143) > 0) {
       if (amount == null) {
         throw ArgumentError(
             'Bitcoin Cash sighash requires value of input to be signed.');
       }
 
-      return _hashForWitnessV0(inIndex, prevOutScript, amount, hashType);
+      return _hashForWitnessV0(inIndex, prevOutScript!, amount, hashType);
     } else {
       return hashForSignature(inIndex, prevOutScript, hashType);
     }
@@ -199,12 +199,12 @@ class Transaction {
     return 8 +
         varuint.encodingLength(inputs.length) +
         varuint.encodingLength(outputs.length) +
-        inputs.fold(0, (sum, input) => sum + 40 + _varSliceSize(input.script)) +
+        inputs.fold(0, (sum, input) => sum + 40 + _varSliceSize(input.script!)) +
         outputs.fold(
-            0, (sum, output) => sum + 8 + _varSliceSize(output.script));
+            0, (sum, output) => sum + 8 + _varSliceSize(output.script!)) as int;
   }
 
-  Uint8List toBuffer([Uint8List buffer, int initialOffset]) {
+  Uint8List toBuffer([Uint8List? buffer, int? initialOffset]) {
     return this._toBuffer(buffer, initialOffset);
   }
 
@@ -222,21 +222,21 @@ class Transaction {
 
   _hashForWitnessV0(
       int inIndex, Uint8List prevOutScript, int amount, int hashType) {
-    Uint8List tBuffer;
-    int tOffset;
+    Uint8List? tBuffer;
+    int? tOffset;
 
     void writeSlice(Uint8List slice) {
-      tBuffer.setRange(tOffset, slice.length + tOffset, slice);
+      tBuffer!.setRange(tOffset!, slice.length + tOffset!, slice);
       tOffset += slice.length;
     }
 
     void writeUint32(int i) {
-      tBuffer.buffer.asByteData().setUint32(tOffset, i, Endian.little);
+      tBuffer!.buffer.asByteData().setUint32(tOffset!, i, Endian.little);
       tOffset += 4;
     }
 
     void writeUint64(int i) {
-      tBuffer.buffer.asByteData().setUint64(tOffset, i, Endian.little);
+      tBuffer!.buffer.asByteData().setUint64(tOffset!, i, Endian.little);
       tOffset += 8;
     }
 
@@ -250,17 +250,17 @@ class Transaction {
       writeSlice(slice);
     }
 
-    Uint8List hashPrevoutputs = zero;
-    Uint8List hashSequence = zero;
-    Uint8List hashOutputs = zero;
+    Uint8List hashPrevoutputs = zero as Uint8List;
+    Uint8List hashSequence = zero as Uint8List;
+    Uint8List hashOutputs = zero as Uint8List;
 
     if ((hashType & SIGHASH_ANYONECANPAY == 0)) {
       tBuffer = Uint8List(36 * this.inputs.length);
       tOffset = 0;
 
       this.inputs.forEach((txInput) {
-        writeSlice(txInput.hash);
-        writeUint32(txInput.index);
+        writeSlice(txInput.hash!);
+        writeUint32(txInput.index!);
       });
 
       hashPrevoutputs = bcrypto.Crypto.hash256(tBuffer);
@@ -273,7 +273,7 @@ class Transaction {
       tOffset = 0;
 
       this.inputs.forEach((txInput) {
-        writeUint32(txInput.sequence);
+        writeUint32(txInput.sequence!);
       });
 
       hashSequence = bcrypto.Crypto.hash256(tBuffer);
@@ -282,14 +282,14 @@ class Transaction {
     if ((hashType & 0x1f) != SIGHASH_SINGLE &&
         (hashType & 0x1f) != SIGHASH_NONE) {
       final txOutputsSize = this.outputs.fold(0, (int sum, Output output) {
-        return sum + 8 + _varSliceSize(output.script);
+        return sum + 8 + _varSliceSize(output.script!);
       });
 
       tBuffer = Uint8List(txOutputsSize);
       tOffset = 0;
 
       this.outputs.forEach((Output output) {
-        writeUint64(output.value);
+        writeUint64(output.value!);
         writeVarSlice(output.script);
       });
 
@@ -298,9 +298,9 @@ class Transaction {
         (inIndex < this.outputs.length)) {
       final output = this.outputs[inIndex];
 
-      tBuffer = Uint8List(8 + _varSliceSize(output.script));
+      tBuffer = Uint8List(8 + _varSliceSize(output.script!));
       tOffset = 0;
-      writeUint64(output.value);
+      writeUint64(output.value!);
       writeVarSlice(output.script);
 
       hashOutputs = bcrypto.Crypto.hash256(tBuffer);
@@ -313,23 +313,23 @@ class Transaction {
     writeUint32(this.version);
     writeSlice(hashPrevoutputs);
     writeSlice(hashSequence);
-    writeSlice(input.hash);
-    writeUint32(input.index);
+    writeSlice(input.hash!);
+    writeUint32(input.index!);
     writeVarSlice(prevOutScript);
     writeUint64(amount);
-    writeUint32(input.sequence);
+    writeUint32(input.sequence!);
     writeSlice(hashOutputs);
     writeUint32(this.locktime);
     writeUint32(hashType);
     return bcrypto.Crypto.hash256(tBuffer);
   }
 
-  _toBuffer([Uint8List buffer, initialOffset]) {
+  _toBuffer([Uint8List? buffer, initialOffset]) {
     if (buffer == null) buffer = new Uint8List(virtualSize());
     var bytes = buffer.buffer.asByteData();
     var offset = initialOffset ?? 0;
     writeSlice(slice) {
-      buffer.setRange(offset, offset + slice.length, slice);
+      buffer!.setRange(offset, offset + slice.length, slice);
       offset += slice.length;
     }
 
@@ -403,15 +403,15 @@ class Transaction {
 
 /// Container for input data and factories to create them
 class Input {
-  Uint8List hash;
-  int index;
-  int sequence;
-  int value;
-  Uint8List script;
-  Uint8List signScript;
-  Uint8List prevOutScript;
-  List<Uint8List> pubkeys;
-  List<Uint8List> signatures;
+  Uint8List? hash;
+  int? index;
+  int? sequence;
+  int? value;
+  Uint8List? script;
+  Uint8List? signScript;
+  Uint8List? prevOutScript;
+  List<Uint8List?>? pubkeys;
+  List<Uint8List?>? signatures;
   Input(
       {this.hash,
       this.index,
@@ -421,13 +421,13 @@ class Input {
       this.prevOutScript,
       this.pubkeys,
       this.signatures}) {
-    if (this.hash != null && this.hash.length != 32)
+    if (this.hash != null && this.hash!.length != 32)
       throw new ArgumentError("Invalid input hash");
-    if (this.index != null && !isUint(this.index, 32))
+    if (this.index != null && !isUint(this.index!, 32))
       throw new ArgumentError("Invalid input index");
-    if (this.sequence != null && !isUint(this.sequence, 32))
+    if (this.sequence != null && !isUint(this.sequence!, 32))
       throw new ArgumentError("Invalid input sequence");
-    if (this.value != null && !isSatoshi(this.value))
+    if (this.value != null && !isSatoshi(this.value!))
       throw ArgumentError("Invalid ouput value");
   }
 
@@ -444,21 +444,21 @@ class Input {
 
   factory Input.clone(Input input) {
     return new Input(
-      hash: input.hash != null ? Uint8List.fromList(input.hash) : null,
+      hash: input.hash != null ? Uint8List.fromList(input.hash!) : null,
       index: input.index,
-      script: input.script != null ? Uint8List.fromList(input.script) : null,
+      script: input.script != null ? Uint8List.fromList(input.script!) : null,
       sequence: input.sequence,
       value: input.value,
       prevOutScript: input.prevOutScript != null
-          ? Uint8List.fromList(input.prevOutScript)
+          ? Uint8List.fromList(input.prevOutScript!)
           : null,
       pubkeys: input.pubkeys != null
-          ? input.pubkeys.map(
-              (pubkey) => pubkey != null ? Uint8List.fromList(pubkey) : null)
+          ? input.pubkeys!.map(
+              (pubkey) => pubkey != null ? Uint8List.fromList(pubkey) : null) as List<Uint8List?>?
           : null,
       signatures: input.signatures != null
-          ? input.signatures.map((signature) =>
-              signature != null ? Uint8List.fromList(signature) : null)
+          ? input.signatures!.map((signature) =>
+              signature != null ? Uint8List.fromList(signature) : null) as List<Uint8List?>?
           : null,
     );
   }
@@ -480,11 +480,11 @@ class Input {
 
 /// Container for storing outputs and factories for working with them
 class Output {
-  Uint8List script;
-  int value;
-  Uint8List valueBuffer;
-  List<Uint8List> pubkeys;
-  List<Uint8List> signatures;
+  Uint8List? script;
+  int? value;
+  Uint8List? valueBuffer;
+  List<Uint8List>? pubkeys;
+  List<Uint8List?>? signatures;
 
   Output(
       {this.script,
@@ -492,7 +492,7 @@ class Output {
       this.pubkeys,
       this.signatures,
       this.valueBuffer}) {
-    if (value != null && !isSatoshi(value))
+    if (value != null && !isSatoshi(value!))
       throw ArgumentError("Invalid ouput value");
   }
   /*
@@ -508,18 +508,18 @@ class Output {
   }*/
   factory Output.clone(Output output) {
     return new Output(
-      script: output.script != null ? Uint8List.fromList(output.script) : null,
+      script: output.script != null ? Uint8List.fromList(output.script!) : null,
       value: output.value,
       valueBuffer: output.valueBuffer != null
-          ? Uint8List.fromList(output.valueBuffer)
+          ? Uint8List.fromList(output.valueBuffer!)
           : null,
       pubkeys: output.pubkeys != null
-          ? output.pubkeys.map(
-              (pubkey) => pubkey != null ? Uint8List.fromList(pubkey) : null)
+          ? output.pubkeys!.map(
+              (pubkey) => pubkey != null ? Uint8List.fromList(pubkey) : null) as List<Uint8List>?
           : null,
       signatures: output.signatures != null
-          ? output.signatures.map((signature) =>
-              signature != null ? Uint8List.fromList(signature) : null)
+          ? output.signatures!.map((signature) =>
+              signature != null ? Uint8List.fromList(signature) : null) as List<Uint8List?>?
           : null,
     );
   }

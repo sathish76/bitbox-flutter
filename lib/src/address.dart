@@ -54,8 +54,8 @@ class Address {
   /// Returns information about the given Bitcoin Cash address.
   ///
   /// See https://developer.bitcoin.com/bitbox/docs/util for details about returned format
-  static Future<Map<String, dynamic>> validateAddress(String address) async =>
-      await RestApi.sendGetRequest("util/validateAddress", address);
+  static Future<Map<String, dynamic>?> validateAddress(String address) async =>
+      await (RestApi.sendGetRequest("util/validateAddress", address) as FutureOr<Map<String, dynamic>?>);
 
   /// Returns details of the provided address or addresses
   ///
@@ -90,7 +90,7 @@ class Address {
       return Utxo.convertMapListToUtxos(result["utxos"]);
     } else if (result is List<Map>) {
       final returnList = <Map>[];
-      final returnMap = <String, List>{};
+      final returnMap = <String?, List>{};
 
       result.forEach((addressUtxoMap) {
         if (returnAsMap) {
@@ -123,7 +123,7 @@ class Address {
       return Utxo.convertMapListToUtxos(result["utxos"]);
     } else if (result is List) {
       final returnList = <Map>[];
-      final returnMap = <String, List>{};
+      final returnMap = <String?, List>{};
 
       result.forEach((addressUtxoMap) {
         if (returnAsMap) {
@@ -147,7 +147,7 @@ class Address {
     final decoded = _decode(address);
     final testnet =
         decoded['prefix'] == "bchtest" || decoded['prefix'] == "slptest";
-    var version;
+    late var version;
     if (testnet) {
       switch (decoded['type']) {
         case "P2PKH":
@@ -171,7 +171,7 @@ class Address {
   }
 
   /// Converts legacy address to cash address
-  static String toCashAddress(String address, [bool includePrefix = true]) {
+  static String? toCashAddress(String address, [bool includePrefix = true]) {
     final decoded = _decode(address);
     switch (decoded["prefix"]) {
       case 'bitcoincash':
@@ -195,7 +195,7 @@ class Address {
   }
 
   /// Converts legacy or cash address to SLP address
-  static String toSLPAddress(String address, [bool includePrefix = true]) {
+  static String? toSLPAddress(String address, [bool includePrefix = true]) {
     final decoded = Address._decode(address);
     switch (decoded["prefix"]) {
       case 'bitcoincash':
@@ -231,7 +231,7 @@ class Address {
   }
 
   /// Detects type of the address and returns [legacy], [cashaddr] or [slpaddr]
-  static String detectAddressFormat(String address) {
+  static String? detectAddressFormat(String address) {
     // decode the address to determine the format
     final decoded = _decode(address);
     // return the format
@@ -261,7 +261,7 @@ class Address {
   /// [prefix] - Network prefix. E.g.: 'bitcoincash'.
   /// [type] Type of address to generate. Either 'P2PKH' or 'P2SH'.
   /// [hash] is the address hash, which can be decode either using [_decodeCashAddress()] or [_decodeLegacyAddress()]
-  static _encode(String prefix, String type, Uint8List hash) {
+  static _encode(String prefix, String? type, Uint8List hash) {
     final prefixData = _prefixToUint5List(prefix) + Uint8List(1);
     final versionByte = _getTypeBits(type) + _getHashSizeBits(hash);
     final payloadData =
@@ -278,7 +278,7 @@ class Address {
     assert(addresses is String || addresses is List<String>);
 
     if (addresses is String) {
-      return await RestApi.sendGetRequest("address/$path", addresses) as Map;
+      return await RestApi.sendGetRequest("address/$path", addresses) as Map?;
     } else if (addresses is List<String>) {
       return await RestApi.sendPostRequest(
           "address/$path", "addresses", addresses,
@@ -453,7 +453,7 @@ class Address {
       throw FormatException("Invalid Address Format: $address");
     }
 
-    String exception;
+    late String exception;
     // try to decode the address with either one or all three possible prefixes
     for (int i = 0; i < prefixes.length; i++) {
       final payload = _base32Decode(address);
@@ -514,7 +514,7 @@ class Address {
       throw FormatException("Invalid Address Format: $address");
     }
 
-    String exception;
+    late String exception;
 
     // try to decode the address with either one or all three possible prefixes
     for (int i = 0; i < prefixes.length; i++) {
@@ -642,7 +642,7 @@ class Address {
       final value = string[i];
       if (!_CHARSET_INVERSE_INDEX.containsKey(value))
         throw FormatException("Invalid character '$value'");
-      data[i] = _CHARSET_INVERSE_INDEX[string[i]];
+      data[i] = _CHARSET_INVERSE_INDEX[string[i]]!;
     }
 
     return data;
@@ -672,12 +672,12 @@ class Address {
 
 /// Container for to make it easier to work with Utxos
 class Utxo {
-  final String txid;
-  final int vout;
-  final double amount;
-  final int satoshis;
-  final int height;
-  final int confirmations;
+  final String? txid;
+  final int? vout;
+  final double? amount;
+  final int? satoshis;
+  final int? height;
+  final int? confirmations;
 
   Utxo(this.txid, this.vout, this.amount, this.satoshis, this.height,
       this.confirmations);

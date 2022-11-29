@@ -26,9 +26,9 @@ class BCHPrivateKey {
 
   var random = Random.secure();
 
-  BigInt _d;
-  ECPrivateKey _ecPrivateKey;
-  BCHPublicKey _bchPublicKey;
+  BigInt? _d;
+  late ECPrivateKey _ecPrivateKey;
+  BCHPublicKey? _bchPublicKey;
 
   /// Constructs a  random private key.
   ///
@@ -44,11 +44,11 @@ class BCHPrivateKey {
 
     var retry =
         100; //100 retries to get correct bitLength. Problem in PointyCastle lib ?
-    AsymmetricKeyPair keypair;
+    late AsymmetricKeyPair keypair;
     while (retry > 0) {
       keypair = generator.generateKeyPair();
       ECPrivateKey key = keypair.privateKey as ECPrivateKey;
-      if (key.d.bitLength == 256) {
+      if (key.d!.bitLength == 256) {
         break;
       } else {
         retry--;
@@ -60,7 +60,7 @@ class BCHPrivateKey {
     _ecPrivateKey = keypair.privateKey as ECPrivateKey;
     _d = _ecPrivateKey.d;
 
-    if (_d.bitLength != 256) {
+    if (_d!.bitLength != 256) {
       throw Exception(
           "Failed to generate a valid private key after 100 tries. Try again. ");
     }
@@ -86,7 +86,7 @@ class BCHPrivateKey {
 
   /// Returns the *naked* private key Big Integer value as a hexadecimal string
   String toHex() {
-    return _d.toRadixString(16);
+    return _d!.toRadixString(16);
   }
 
   Uint8List _seed() {
@@ -105,14 +105,14 @@ class BCHPrivateKey {
   }
 
   /// Returns the *naked* private key Big Integer value as a Big Integer
-  BigInt get privateKey {
+  BigInt? get privateKey {
     return _d;
   }
 
   /// Returns the [BCHPublicKey] corresponding to this ECDSA private key.
   ///
   /// NOTE: `Q = d * G` where *Q* is the public key, *d* is the private key and `G` is the curve's Generator.
-  BCHPublicKey get publicKey {
+  BCHPublicKey? get publicKey {
     return _bchPublicKey;
   }
 

@@ -40,7 +40,7 @@ class BitcoinCash {
     return signatureBuffer;
   }
 
-  static Uint8List getOpReturnScript(String data) {
+  static Uint8List? getOpReturnScript(String data) {
     return compile([Opcodes.OP_RETURN, utf8.encode(data)]);
   }
 }

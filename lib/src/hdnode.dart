@@ -35,13 +35,13 @@ class HDNode {
   int index = 0;
 
   int parentFingerprint = 0x00000000;
-  Uint8List get identifier => Crypto.hash160(publicKeyList);
+  Uint8List get identifier => Crypto.hash160(publicKeyList!);
   Uint8List get fingerprint => identifier.sublist(0, 4);
 
-  Uint8List get publicKeyList => _keyPair.publicKey;
+  Uint8List? get publicKeyList => _keyPair.publicKey;
 
-  String get privateKey => HEX.encode(_keyPair.privateKey);
-  String get publicKey => HEX.encode(publicKeyList);
+  String get privateKey => HEX.encode(_keyPair.privateKey!);
+  String get publicKey => HEX.encode(publicKeyList!);
 
   get rawPrivateKey => _keyPair.privateKey;
 
@@ -57,7 +57,7 @@ class HDNode {
 
     final key = utf8.encode('Bitcoin seed');
 
-    final I = Crypto.hmacSHA512(key, seed);
+    final I = Crypto.hmacSHA512(key as Uint8List, seed);
 
     final keyPair = ECPair(I.sublist(0, 32), null, network: network);
 
@@ -167,10 +167,10 @@ class HDNode {
         throw ArgumentError("Missing private key for hardened child key");
       }
       data[0] = 0x00;
-      data.setRange(1, 33, _keyPair.privateKey);
+      data.setRange(1, 33, _keyPair.privateKey!);
       data.buffer.asByteData().setUint32(33, index);
     } else {
-      data.setRange(0, 33, publicKeyList);
+      data.setRange(0, 33, publicKeyList!);
       data.buffer.asByteData().setUint32(33, index);
     }
 
@@ -182,12 +182,12 @@ class HDNode {
 //    }
     ECPair derivedKeyPair;
     if (!_isNeutered()) {
-      final ki = ECurve.privateAdd(_keyPair.privateKey, IL);
+      final ki = ECurve.privateAdd(_keyPair.privateKey!, IL);
       if (ki == null) return derive(index + 1);
 
       derivedKeyPair = ECPair(ki, null, network: this._keyPair.network);
     } else {
-      final ki = ECurve.pointAddScalar(publicKeyList, IL, true);
+      final ki = ECurve.pointAddScalar(publicKeyList!, IL, true);
       if (ki == null) return derive(index + 1);
 
       derivedKeyPair = ECPair(null, ki, network: this._keyPair.network);
@@ -210,10 +210,10 @@ class HDNode {
   String toLegacyAddress() => _keyPair.address;
 
   /// Returns HDNode's address in cashAddr format
-  String toCashAddress() => Address.toCashAddress(toLegacyAddress());
+  String? toCashAddress() => Address.toCashAddress(toLegacyAddress());
 
   /// Returns HDNode's address in slpAddr format
-  String toSLPAddress() => Address.toSLPAddress(toLegacyAddress());
+  String? toSLPAddress() => Address.toSLPAddress(toLegacyAddress());
 
   HDNode _deriveHardened(int index) {
     return derive(index + HIGHEST_BIT);
@@ -232,9 +232,9 @@ class HDNode {
     buffer.setRange(13, 45, _chainCode);
     if (!_isNeutered()) {
       bytes.setUint8(45, 0);
-      buffer.setRange(46, 78, _keyPair.privateKey);
+      buffer.setRange(46, 78, _keyPair.privateKey!);
     } else {
-      buffer.setRange(45, 78, publicKeyList);
+      buffer.setRange(45, 78, publicKeyList!);
     }
     return bs58check.encode(buffer);
   }

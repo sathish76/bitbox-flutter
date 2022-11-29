@@ -35,7 +35,7 @@ class ECurve {
     return result;
   }
 
-  static Uint8List privateAdd(Uint8List d, Uint8List tweak) {
+  static Uint8List? privateAdd(Uint8List d, Uint8List tweak) {
 //    if (!isPrivate(d)) throw new ArgumentError(THROW_BAD_PRIVATE);
 //    if (!isOrderScalar(tweak)) throw new ArgumentError(THROW_BAD_TWEAK);
     BigInt dd = decodeBigInt(d);
@@ -48,31 +48,31 @@ class ECurve {
   static bool isPrivate(Uint8List x) {
     if (!isScalar(x)) return false;
     return _compare(x, zero32) > 0 && // > 0
-        _compare(x, ecGroupOrder) < 0; // < G
+        _compare(x, ecGroupOrder as Uint8List) < 0; // < G
   }
 
   static bool isScalar(Uint8List x) {
     return x.length == 32;
   }
 
-  static Uint8List pointFromScalar(Uint8List d, bool _compressed) {
+  static Uint8List? pointFromScalar(Uint8List d, bool _compressed) {
 //    if (!isPrivate(d)) throw new ArgumentError(THROW_BAD_PRIVATE);
     BigInt dd = decodeBigInt(d);
-    ECPoint pp = G * dd;
+    ECPoint pp = (G * dd)!;
     if (pp.isInfinity) return null;
     return pp.getEncoded(_compressed);
   }
 
-  static Uint8List pointAddScalar(
+  static Uint8List? pointAddScalar(
       Uint8List p, Uint8List tweak, bool _compressed) {
 //    if (!isPoint(p)) throw new ArgumentError(THROW_BAD_POINT);
 //    if (!isOrderScalar(tweak)) throw new ArgumentError(THROW_BAD_TWEAK);
     bool compressed = assumeCompression(_compressed, p);
-    ECPoint pp = decodeFrom(p);
-    if (_compare(tweak, zero32) == 0) return pp.getEncoded(compressed);
+    ECPoint? pp = decodeFrom(p);
+    if (_compare(tweak, zero32) == 0) return pp!.getEncoded(compressed);
     BigInt tt = decodeBigInt(tweak);
-    ECPoint qq = G * tt;
-    ECPoint uu = pp + qq;
+    ECPoint? qq = G * tt;
+    ECPoint uu = (pp! + qq)!;
     if (uu.isInfinity) return null;
     return uu.getEncoded(compressed);
   }
@@ -101,7 +101,7 @@ class ECurve {
     if (_compare(x, zero32) == 0) {
       return false;
     }
-    if (_compare(x, ecP) == 1) {
+    if (_compare(x, ecP as Uint8List) == 1) {
       return false;
     }
     try {
@@ -116,7 +116,7 @@ class ECurve {
     if (_compare(y, zero32) == 0) {
       return false;
     }
-    if (_compare(y, ecP) == 1) {
+    if (_compare(y, ecP as Uint8List) == 1) {
       return false;
     }
     if (t == 0x04 && p.length == 65) {
@@ -129,5 +129,5 @@ class ECurve {
     return p[0] != 0x04;
   }
 
-  static ECPoint decodeFrom(Uint8List P) => secp256k1.curve.decodePoint(P);
+  static ECPoint? decodeFrom(Uint8List P) => secp256k1.curve.decodePoint(P);
 }
