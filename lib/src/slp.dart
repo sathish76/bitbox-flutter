@@ -41,7 +41,8 @@ class SLP {
   }
 
   static getAllSlpBalancesAndUtxos(String address) async {
-    List utxos = await (mapToSlpAddressUtxoResultArray(address) as FutureOr<List<dynamic>>);
+    List utxos = await (mapToSlpAddressUtxoResultArray(address)
+        as FutureOr<List<dynamic>>);
     var txIds = [];
     utxos.forEach((i) {
       txIds.add(i['txid']);
@@ -371,9 +372,10 @@ class SLP {
     }
 
     // Add change, if any
-    if (bchChangeAfterFeeSatoshis + new BigInt.from(extraBCH!) > new BigInt.from(546)) {
-      transactionBuilder.addOutput(
-          bchChangeReceiverAddress, bchChangeAfterFeeSatoshis.toInt() + extraBCH);
+    if (bchChangeAfterFeeSatoshis + new BigInt.from(extraBCH!) >
+        new BigInt.from(546)) {
+      transactionBuilder.addOutput(bchChangeReceiverAddress,
+          bchChangeAfterFeeSatoshis.toInt() + extraBCH);
     }
 
     if (hashType == null) hashType = Transaction.SIGHASH_ALL;
@@ -409,7 +411,7 @@ class SLP {
       bchIndex++;
     });
 
-     int _extraFee = (tokenReceiverAddresses.length + bchOnlyCount) * 546;
+    int _extraFee = (tokenReceiverAddresses.length + bchOnlyCount) * 546;
 
     // Build the transaction to hex and return
     // warn user if the transaction was not fully signed
@@ -423,10 +425,12 @@ class SLP {
 
     // Check For Low Fee
     int outValue = 0;
-    transactionBuilder.tx.outputs.forEach((o) => outValue += o.value!);
+    transactionBuilder.tx.outputs.forEach((o) => outValue += o.value ?? 0);
     int inValue = 0;
-    inputTokenUtxos.forEach((i) => inValue = inValue + (i['satoshis'] as num).toInt());
-    bchInputUtxos.forEach((i) => inValue = inValue + (i['satoshis'] as num).toInt());
+    inputTokenUtxos
+        .forEach((i) => inValue += int.parse(i['satoshis'].toString()));
+    bchInputUtxos
+        .forEach((i) => inValue += int.parse(i['satoshis'].toString()));
     if (inValue - outValue < hex.length / 2) {
       return {'hex': null, 'fee': "Insufficient fee"};
     }
