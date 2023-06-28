@@ -6,28 +6,28 @@ import '../exceptions.dart';
 
 var ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 
-List<int> decode(String input) {
+List<int?> decode(String input) {
   if (input.isEmpty) {
-    return List<int>();
+    return [];
   }
 
   var encodedInput = utf8.encode(input);
   var uintAlphabet = utf8.encode(ALPHABET);
 
-  List<int> INDEXES = List<int>(128)..fillRange(0, 128, -1);
+  List<int?> INDEXES = List<int>.filled(128, -1);
   for (int i = 0; i < ALPHABET.length; i++) {
     INDEXES[uintAlphabet[i]] = i;
   }
 
   // Convert the base58-encoded ASCII chars to a base58 byte sequence (base58 digits).
-  List<int> input58 = List<int>(encodedInput.length);
+  List<int?> input58 = List.generate(encodedInput.length, ((index) => index));
   input58.fillRange(0, input58.length, 0);
   for (int i = 0; i < encodedInput.length; ++i) {
     var c = encodedInput[i];
-    var digit = c < 128 ? INDEXES[c] : -1;
+    var digit = c < 128 ? INDEXES[c]! : -1;
     if (digit < 0) {
-      var buff = List<int>(1)..add(c);
-      var invalidChar = utf8.decode(buff);
+      var buff = [c];
+      var invalidChar = utf8.decode(buff as List<int>);
       throw new AddressFormatException(
           "Illegal character " + invalidChar + " at position " + i.toString());
     }
@@ -41,8 +41,7 @@ List<int> decode(String input) {
   }
 
   // Convert base-58 digits to base-256 digits.
-  var decoded = List<int>(encodedInput.length);
-  decoded.fillRange(0, decoded.length, 0);
+  var decoded = List<int>.filled(encodedInput.length, 0);
   int outputStart = decoded.length;
   for (int inputStart = zeros; inputStart < input58.length;) {
     decoded[--outputStart] = divmod(input58, inputStart, 58, 256);
@@ -65,11 +64,11 @@ List<int> decode(String input) {
  * in the specified base, by the given divisor. The given number is modified in-place
  * to contain the quotient, and the return value is the remainder.
  */
-divmod(List<int> number, int firstDigit, int base, int divisor) {
+divmod(List<int?> number, int firstDigit, int base, int divisor) {
 // this is just long division which accounts for the base of the input digits
   int remainder = 0;
   for (int i = firstDigit; i < number.length; i++) {
-    int digit = number[i] & 0xFF;
+    int digit = number[i]! & 0xFF;
     int temp = remainder * base + digit;
     number[i] = (temp / divisor).toInt();
     remainder = temp % divisor;
@@ -88,7 +87,7 @@ Uint8List encode(List<int> encodedInput) {
 //    var encodedInput = utf8.encode(input);
 
   if (encodedInput.isEmpty) {
-    return List<int>();
+    return [] as Uint8List;
   }
 
   // Count leading zeros.
@@ -120,12 +119,12 @@ Uint8List encode(List<int> encodedInput) {
   return encoded.sublist(outputStart, encoded.length);
 }
 
-List<int> decodeChecked(String input) {
-  List<int> decoded = decode(input);
+List<int?> decodeChecked(String input) {
+  List<int?> decoded = decode(input);
   if (decoded.length < 4) throw new AddressFormatException("Input too short");
 
-  List<int> data = decoded.sublist(0, decoded.length - 4);
-  List<int> checksum = decoded.sublist(decoded.length - 4, decoded.length);
+  List<int?> data = decoded.sublist(0, decoded.length - 4);
+  List<int?> checksum = decoded.sublist(decoded.length - 4, decoded.length);
   List<int> actualChecksum = sha256Twice(data).sublist(0, 4);
 
   var byteConverted = actualChecksum

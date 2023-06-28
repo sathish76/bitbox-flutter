@@ -34,9 +34,9 @@ class Ecies {
   /// [recipientPublicKey] - Public Key of the party who can decrypt the message
   ///
   static String encryptData(
-      {String message,
-      String senderPrivateKeyHex,
-      String recipientPublicKeyHex,
+      {required String message,
+      required String senderPrivateKeyHex,
+      required String recipientPublicKeyHex,
       String magicValue = "BIE1"}) {
     //Encryption requires derivation of a cipher using the other party's Public Key
     // Bob is sender, Alice is recipient of encrypted message
@@ -51,10 +51,10 @@ class Ecies {
 
     List<int> messageBuffer = Uint8List.fromList(message.codeUnits);
 
-    final ECPoint S = (recipientPublicKey.point *
-        senderPrivateKey.privateKey); //point multiplication
+    final ECPoint S = (recipientPublicKey.point! *
+        senderPrivateKey.privateKey)!; //point multiplication
 
-    final pubkeyS = BCHPublicKey.fromXY(S.x.toBigInteger(), S.y.toBigInteger());
+    final pubkeyS = BCHPublicKey.fromXY(S.x!.toBigInteger()!, S.y!.toBigInteger()!);
     final pubkeyBuffer = HEX.decode(pubkeyS.getEncoded(true));
     final pubkeyHash = SHA512Digest().process(pubkeyBuffer as Uint8List);
 
@@ -73,7 +73,7 @@ class Ecies {
     final magic = utf8.encode(magicValue);
 
     final encodedBuffer = Uint8List.fromList(
-        magic + HEX.decode(senderPrivateKey.publicKey.toHex()) + cipherText);
+        magic + HEX.decode(senderPrivateKey.publicKey!.toHex()) + cipherText);
 
     //calc checksum
     final hmac = _calculateHmac(kM, encodedBuffer);
@@ -101,8 +101,8 @@ class Ecies {
   /// [recipientPrivateKey] - Private Key of the receiving party
   ///
   static String decryptData(
-      {String cipherTextStr,
-      String recipientPrivateKeyHex,
+      {required String cipherTextStr,
+      required String recipientPrivateKeyHex,
       String magicValue = "BIE1"}) {
     //AES Cipher is calculated as
     //1) S = recipientPrivateKey o senderPublicKey
@@ -128,8 +128,8 @@ class Ecies {
         BCHPublicKey.fromHex(HEX.encode(senderPubkeyBuffer));
 
     //calculate S = recipientPrivateKey o senderPublicKey
-    final S = (senderPublicKey.point *
-        recipientPrivateKey.privateKey); //point multiplication
+    final S = (senderPublicKey.point! *
+        recipientPrivateKey.privateKey)!; //point multiplication
     final cipher = S.x;
 
     if (cipherText.length - _tagLength <= 37) {
@@ -138,7 +138,7 @@ class Ecies {
     }
 
     //validate the checksum bytes
-    final pubkeyS = BCHPublicKey.fromXY(S.x.toBigInteger(), S.y.toBigInteger());
+    final pubkeyS = BCHPublicKey.fromXY(S.x!.toBigInteger()!, S.y!.toBigInteger()!);
     final pubkeyBuffer = HEX.decode(pubkeyS.getEncoded(true));
     final pubkeyHash = SHA512Digest().process(pubkeyBuffer as Uint8List);
 
@@ -153,7 +153,7 @@ class Ecies {
     final Uint8List hmac = _calculateHmac(kM, message);
 
     final Uint8List messageChecksum =
-        cipherText.sublist(cipherText.length - _tagLength, cipherText.length);
+        cipherText.sublist(cipherText.length - _tagLength, cipherText.length) as Uint8List;
 
     // ignore: prefer_const_constructors
     if (!ListEquality().equals(messageChecksum, hmac)) {

@@ -75,7 +75,7 @@ void main() async {
         "original_amount": utxo.satoshis
       });
 
-      totalBalance += utxo.satoshis;
+      totalBalance += utxo.satoshis!;
     });
 
     // set an address to send the remaining balance to

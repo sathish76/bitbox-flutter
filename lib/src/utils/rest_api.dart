@@ -9,7 +9,7 @@ class RestApi {
   }
 
   static Future<dynamic> sendGetRequest(String path,
-      [String parameter = ""]) async {
+      [String? parameter = ""]) async {
     final response = await http.get(Uri.parse("$_restUrl$path/$parameter"));
 
     if (response.statusCode == 200) {
@@ -21,7 +21,7 @@ class RestApi {
 
   static Future<dynamic> sendPostRequest(
       String path, String postKey, List<String> data,
-      {String returnKey}) async {
+      {String? returnKey}) async {
     if (postKey == null || postKey.isEmpty) {
       postKey = "addresses";
     }
@@ -45,7 +45,7 @@ class RestApi {
             "return data (below) is not List of Maps: \n${response.body}");
       }
 
-      Map<String, dynamic> returnMap = <String, dynamic>{};
+      Map<String?, dynamic> returnMap = <String?, dynamic>{};
 
       responseData.forEach((Map item) {
         if (!item.containsKey(returnKey)) {

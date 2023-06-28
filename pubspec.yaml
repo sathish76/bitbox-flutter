@@ -5,25 +5,25 @@ author: Tomas Forgac <tomas@forgac.me>
 homepage: https://github.com/tomasforgacbch/bitbox-flutter
 
 environment:
-  sdk: ">=2.1.0 <3.0.0"
+  sdk: '>=2.12.0 <3.0.0'
 
 dependencies:
   flutter:
     sdk: flutter
-  http: ^0.13.1
+  http: ^0.13.5
   bip39:
     git:
       url: https://github.com/zapit-io/bip39.git
       ref: master
-  pointycastle: ^3.6.0
+  pointycastle: ^3.6.2
   bip32:
     git:
       url: https://github.com/zapit-io/bip32-dart.git
       ref: master
   hex: ^0.2.0
-  fixnum: ^1.0.0
-  meta: ^1.3.0
-  buffer: ^1.1.0
+  fixnum: ^1.0.1
+  meta: ^1.8.0
+  buffer: ^1.1.1
   bs58check: ^1.0.2
   slp_parser:
     git:
