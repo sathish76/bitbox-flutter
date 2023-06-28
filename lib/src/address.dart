@@ -56,7 +56,8 @@ class Address {
   ///
   /// See https://developer.bitcoin.com/bitbox/docs/util for details about returned format
   static Future<Map<String, dynamic>?> validateAddress(String address) async =>
-      await (RestApi.sendGetRequest("util/validateAddress", address) as FutureOr<Map<String, dynamic>?>);
+      await (RestApi.sendGetRequest("util/validateAddress", address)
+          as FutureOr<Map<String, dynamic>?>);
 
   /// Returns details of the provided address or addresses
   ///
@@ -192,6 +193,32 @@ class Address {
       return cashAddress.split(":")[1];
     } else {
       return cashAddress;
+    }
+  }
+
+  /// Converts legacy address to cash address
+  static String? toTokenAddress(String address, [bool includePrefix = true]) {
+    final decoded = _decode(address);
+    switch (decoded["prefix"]) {
+      case 'bitcoincash':
+      case 'simpleledger':
+        decoded['prefix'] = "bitcoincash";
+        break;
+      case 'bchtest':
+      case 'slptest':
+        decoded['prefix'] = "bchtest";
+        break;
+      default:
+        throw FormatException("Unsupported address format: $address");
+    }
+
+    final tokenAddress =
+        _encode(decoded['prefix'], "P2PKHWITHTOKENS", decoded["hash"]);
+
+    if (!includePrefix) {
+      return tokenAddress.split(":")[1];
+    } else {
+      return tokenAddress;
     }
   }
 
@@ -352,6 +379,8 @@ class Address {
         return 'P2PKH';
       case 8:
         return 'P2SH';
+      case 16:
+        return 'P2PKHWITHTOKENS';
       default:
         throw FormatException(
             'Invalid address type in version byte: ' + versionByte + '.');
@@ -364,6 +393,8 @@ class Address {
         return 0;
       case 'P2SH':
         return 8;
+      case 'P2PKHWITHTOKENS':
+        return 16;
       default:
         throw new FormatException('Invalid type: ' + type + '.');
     }

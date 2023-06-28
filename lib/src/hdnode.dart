@@ -215,6 +215,8 @@ class HDNode {
   /// Returns HDNode's address in slpAddr format
   String? toSLPAddress() => Address.toSLPAddress(toLegacyAddress());
 
+  String? toTokenAddress() => Address.toTokenAddress(toLegacyAddress());
+
   HDNode _deriveHardened(int index) {
     return derive(index + HIGHEST_BIT);
   }
