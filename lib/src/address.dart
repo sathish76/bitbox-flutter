@@ -109,6 +109,13 @@ class Address {
     }
   }
 
+  static String detectFormat(String address) {
+    // decode the address to determine the format
+    final decoded = _decode(address);
+    // return the format
+    return decoded["format"];
+  }
+
   /// Returns [Utxo] or a [List] of Utxos for the address or addresses.
   ///
   /// * If [addresses] is [String], it will return a list of [Utxo]
@@ -427,6 +434,7 @@ class Address {
     Uint8List buffer = bs58check.decode(address);
 
     var decoded = {
+      'version': buffer.first,
       'prefix': "",
       'type': "",
       'hash': buffer.sublist(1),
