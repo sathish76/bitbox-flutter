@@ -160,18 +160,22 @@ class Address {
     if (testnet) {
       switch (decoded['type']) {
         case "P2PKH":
+        case "P2PKHWITHTOKENS":
           version = Network.bchTestnetPublic;
           break;
         case "P2SH":
+        case "P2SHWITHTOKENS":
           version = Network.bchTestnetscriptHash;
           break;
       }
     } else {
       switch (decoded['type']) {
         case "P2PKH":
+        case "P2PKHWITHTOKENS":
           version = Network.bchPublic;
           break;
         case "P2SH":
+        case "P2SHWITHTOKENS":
           version = Network.bchPublicscriptHash;
           break;
       }
